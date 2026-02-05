@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>About</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #121212, #090909);
+      color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .info-box {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      padding: 28px 24px;
+      width: 80%;
+      max-width: 340px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    img {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 1.4em;
+      color: #00bfff;
+      margin-bottom: 5px;
+    }
+
+    .version {
+      font-size: 0.9em;
+      color: #ccc;
+      margin-bottom: 10px;
+    }
+
+    .author {
+      color: #6cf06c;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    .details {
+      font-size: 0.85em;
+      color: #bbb;
+    }
+
+    button {
+      margin-top: 18px;
+      background: #00aaff;
+      border: none;
+      color: white;
+      padding: 8px 22px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #007acc;
+    }
+  </style>
+</head>
+<body>
+  <div class="info-box">
+    <img src="../assets/icon.png" alt="App Icon" onerror="this.style.display='none'">
+    <h1 id="appName">App Name</h1>
+    <div class="version" id="version">v1.0.0</div>
+    <div class="author" id="author">Created by Someone</div>
+    <div class="details" id="details"></div>
+    <button id="closeBtn">Tutup</button>
+  </div>
+
+  <script>
+  // Dapatkan data dari main process lewat preload
+  window.api?.onShowAppInfo((info) => {
+    document.getElementById("appName").textContent = info.appName;
+    document.getElementById("version").textContent = "v" + info.version;
+    document.getElementById("author").textContent = "Created by " + info.author;
+    document.getElementById("details").innerHTML =
+      "Electron " + info.electronVersion + "<br>Node " + info.nodeVersion;
+  });
+
+  // Tutup popup
+  document.getElementById("closeBtn").addEventListener("click", () => {
+    window.api?.closeWindow();
+  });
+</script>
+
+</body>
+</html>

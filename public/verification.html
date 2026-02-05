@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Verifying Your Account...</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background: #f2f2f7;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .card {
+    background: white;
+    width: 90%;
+    max-width: 420px;
+    padding: 30px 25px;
+    border-radius: 18px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+
+  h2 {
+    margin-top: 0;
+    font-size: 22px;
+    color: #222;
+  }
+
+  p {
+    color: #444;
+    font-size: 15px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .spinner {
+    width: 55px;
+    height: 55px;
+    border: 6px solid #ddd;
+    border-top-color: #007aff;
+    border-radius: 50%;
+    margin: 20px auto;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .success {
+    color: #28a745;
+    font-weight: 600;
+    margin-top: 12px;
+  }
+
+  .failed {
+    color: #e63946;
+    font-weight: 600;
+    margin-top: 12px;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="card" id="cardBox">
+  <h2>Verifying Email...</h2>
+  <p>Please wait, verifying your account.</p>
+  <div class="spinner"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://hlleyvltrlopiagyrvbr.supabase.co";
+  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbGV5dmx0cmxvcGlhZ3lydmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NjE3NTksImV4cCI6MjA4MDQzNzc1OX0.L_8J118cgDWAgxe4B7t6RxU3gjEXzKWDvj53cIMFX7k";
+
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  async function verifyUser() {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const type = params.get("type");
+
+    const card = document.getElementById("cardBox");
+
+    if (!token || !type) {
+      card.innerHTML = `
+        <h2>Email Verification Failed</h2>
+        <p class="failed">Invalid verification link. Please request a new one.</p>
+      `;
+      return;
+    }
+
+    // Use Supabase builtin verify function
+    const { data, error } = await supabaseClient.auth.verifyOtp({
+      token,
+      type
+    });
+
+    if (error) {
+      console.error(error);
+      card.innerHTML = `
+        <h2>Verification Failed</h2>
+        <p class="failed">${error.message}</p>
+      `;
+      return;
+    }
+
+    // SUCCESS
+    card.innerHTML = `
+      <h2>Email Verified!</h2>
+      <p class="success">Your account is now active.<br>Redirecting...</p>
+      <div class="spinner"></div>
+    `;
+
+    // Wait 1.5 seconds then redirect
+    setTimeout(() => {
+      window.location.href = "loginUser.html"; 
+      // ubah ke halaman yang kamu mau: home.html, index.html, dll.
+    }, 1500);
+  }
+
+  verifyUser();
+</script>
+
+</body>
+</html>

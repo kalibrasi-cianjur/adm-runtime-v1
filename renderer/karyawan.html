@@ -1,0 +1,824 @@
+<!-- renderer/karyawan.html -->
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <title>Karyawan Manager</title>
+   <link rel="stylesheet" href="style.css">
+     <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
+</head>
+<body>
+<div id="global-loading" class="loading-hidden">
+  <div class="loader"></div>
+  <p>Loading screen...</p>
+</div>
+
+  <div class="layout">
+  <div class="left-panel">
+
+    <!-- SEGMENTED -->
+    <div class="segmented">
+      <div class="seg-item active" data-mode="baru">Karyawan Baru</div>
+      <div class="seg-item" data-mode="perpanjang">Perpanjangan</div>
+    </div>
+
+    <!-- FORM PERPANJANGAN -->
+    <div id="formPerpanjangan" style="display:none;">
+      <h2>Perpanjangan Kontrak</h2>
+      <form id="perpanjangForm">
+
+        <div class="field">
+          <label>NIK</label>
+          <input type="text" id="perpanjang_nik" placeholder="Masukkan NIK">
+        </div>
+
+        <div class="field">
+          <label>Nama</label>
+          <input type="text" id="perpanjang_name" disabled>
+        </div>
+
+        <div class="field">
+          <label>Durasi Perpanjangan (bulan)</label>
+          <input type="number" id="perpanjang_durasi" min="1">
+        </div>
+
+        <div class="field">
+          <label>Tanggal Mulai Perpanjangan</label>
+          <input type="date" id="perpanjang_mulai">
+        </div>
+
+        <button type="submit" style="margin-top:10px;">Simpan Karyawan</button>
+
+      </form>
+    </div>
+
+    <!-- FORM KARYAWAN BARU -->
+    <div id="wrapperKaryawanForm">
+      <h2>Form Karyawan</h2>
+
+      <form id="karyawanForm">
+
+        <div class="field">
+          <label>NIK</label>
+          <input type="text" id="kar_nik" required placeholder="NIK">
+          <small id="nik_info" style="font-weight:bold;"></small>
+        </div>
+
+        <div class="field">
+          <label>Nama</label>
+          <input type="text" id="kar_name" required class="uppercase">
+        </div>
+
+        <div class="field">
+          <label>Status</label>
+          <select id="kar_role" required>
+            <option value="">-- Pilih --</option>
+            <option value="DH">Department Head</option>
+            <option value="SH">Section Head</option>
+            <option value="UH">Unit Head</option>
+            <option value="HT">HT</option>
+            <option value="PKWT">PKWT</option>
+            <option value="OS">OS</option>
+          </select>
+        </div>
+
+        <div class="field" id="durasiField" style="display:none;">
+          <label>Durasi Kontrak (bulan)</label>
+          <input type="number" id="durasi_kontrak" min="1" placeholder="Contoh: 6">
+        </div>
+
+        <div class="field">
+          <label>Tanggal Join</label>
+          <input type="date" id="kar_tanggaljoin" required>
+        </div>
+
+        <div class="field">
+          <label>Foto Karyawan</label>
+          <input type="file" id="kar_foto" accept="image/*">
+        </div>
+
+        <img id="kar_preview" style="max-width: 120px; margin-top: 10px; display:none;">
+
+        <div style="margin-top:10px;">
+          <button type="submit">Simpan Karyawan</button>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+<button id="btnTogglePanel" class="toggle-btn">☰</button>
+
+    <div class="right-panel">
+      <h3>History Karyawan</h3>
+      <div id="karyawanGrid" class="karyawan-grid"></div>
+    </div>
+  </div>
+
+
+<div id="karyawanModal" class="modal">
+  <div class="modal-content">
+    <span id="closeModal" class="close">&times;</span>
+
+    <div class="modal-body" style="display:flex; gap:20px;">
+
+      <!-- KIRI -->
+      <div class="player-left" style="flex:1;">
+        <img id="modalFoto" class="modal-foto" style="width:100%; border-radius:8px;">
+
+        <!-- EDIT FOTO -->
+        <input type="file" id="editFoto" style="display:none; margin-top:10px;">
+
+        <div style="margin-top:10px;">
+          <p><strong>NIK:</strong> <span id="modalNik"></span></p>
+          <p><strong>Jabatan:</strong> <span id="modalStatus"></span></p>
+          <p><strong>Tanggal Join:</strong> <span id="modalTanggaljoin"></span></p>
+          <p><strong>Habis Kontrak:</strong> <span id="modalKontrak"></span></p>
+          <p><strong>Durasi:</strong> <span id="modalDurasi"></span></p>
+          <div class="masa-kerja"><strong>Masa Kerja:</strong> <span id="modalMasaKerja"></span></div>
+
+        </div>
+      </div>
+
+      <!-- KANAN -->
+      <div class="player-right" style="flex:1;">
+        <h2 id="modalNama"></h2>
+
+        <!-- VIEW MODE -->
+        <div id="paramView">
+          <p><strong>Attitude:</strong> <span id="attitudePercent">0%</span></p>
+          <div style="background:#eee; width:100%; height:10px; border-radius:5px;">
+            <div id="attitudeBar" style="background:#4CAF50; width:0%; height:100%; border-radius:5px;"></div>
+          </div>
+
+          <p><strong>Absensi:</strong> <span id="absensiPercent">0%</span></p>
+          <div style="background:#eee; width:100%; height:10px; border-radius:5px;">
+            <div id="absensiBar" style="background:#2196F3; width:0%; height:100%; border-radius:5px;"></div>
+          </div>
+
+          <p><strong>Operasional:</strong> <span id="operasionalPercent">0%</span></p>
+          <div style="background:#eee; width:100%; height:10px; border-radius:5px;">
+            <div id="operasionalBar" style="background:#FF9800; width:0%; height:100%; border-radius:5px;"></div>
+          </div>
+        </div>
+
+        <!-- EDIT MODE -->
+        <div id="paramEdit" style="display:none; margin-top:10px;">
+          <label>Attitude (%):</label>
+          <input type="number" id="editAttitude" min="0" max="100"><br>
+
+          <label>Absensi (%):</label>
+          <input type="number" id="editAbsensi" min="0" max="100"><br>
+
+          <label>Operasional (%):</label>
+          <input type="number" id="editOperasional" min="0" max="100"><br>
+        </div>
+
+
+<!-- MODAL TREND -->
+<div id="trendModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span id="closeTrend" class="close">&times;</span>
+    <h3>Trend Performance</h3>
+
+    <canvas id="trendChart" style="width:100%; height:100px;"></canvas>
+  </div>
+</div>
+
+
+
+        <!-- BUTTONS -->
+        <div style="margin-top:15px;">
+          <button id="btnEdit" class="btn btn-edit">Edit</button>
+          <button id="btnSave" class="btn btn-save" style="display:none;">Simpan</button>
+           <button id="btnShow" class="btn btn-show">Show</button>
+          <button id="btnDelete" class="btn btn-delete">Hapus</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  /* style.css - bagian karyawan */
+.layout {
+  display: flex;
+  gap: 20px;
+  padding: 18px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+.left-panel {
+  width: 320px;
+  background: #f7f8fb;
+  padding: 14px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+
+}
+
+.right-panel {
+  flex: 1;
+}
+
+.karyawan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+}
+
+.highlight-form {
+  border: 2px solid #ffcc00;
+  padding: 10px;
+  border-radius: 6px;
+  background: #fff9d6;
+  transition: 0.25s ease;
+}
+
+
+.karyawan-card.highlight {
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+  transform: translateY(-3px) scale(1.02);
+  transition: 0.25s ease-in-out;
+}
+.player-style {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.player-left {
+  width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.modal-foto {
+  width: 150px;
+  height: 180px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 3px solid gold;
+}
+
+.player-right {
+  flex: 1;
+  background: #101820;
+  padding: 15px;
+  border-radius: 12px;
+  color: #fff;
+  position: relative;
+  box-shadow: 0 0 15px rgba(255,215,0,0.4);
+}
+
+.btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  font-weight: bold;
+}
+
+.btn-edit {
+  background: #0077ff;
+}
+
+.btn-save {
+  background: #00b12a;
+}
+
+.btn-delete {
+  background: #d10000;
+}
+
+.player-right label {
+  font-size: 13px;
+  font-weight: bold;
+  margin-top: 10px;
+  display: block;
+}
+
+.player-right input,
+.player-right select {
+  width: 100%;
+  padding: 6px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+
+
+.karyawan-card {
+  display: flex;
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 12px;
+  gap: 12px;
+  align-items: center;
+  box-shadow: 0 3px 10px var(--shadow);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.karyawan-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px var(--shadow);
+}
+
+.card-left img.foto {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.card-right .nama {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.card-right .nik,
+.card-right .status,
+.card-right .tanggaljoin,
+.card-right .kontrak,
+.card-right .habiskontrak,
+.card-right .sisakontrak,
+.card-right .kontrak_ke {
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.card-right .status select {
+  margin-left: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* ================= THEME SUPPORT ================= */
+/* Dark theme */
+body.dark .karyawan-card,
+body.dashboard-dark .karyawan-card {
+  background: #1c1c1c;
+  color: #e0e0e0;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+}
+
+body.dark .card-right .jabatan,
+body.dark .card-right .status,
+body.dark .card-right .join,
+body.dark .card-right .kontrak {
+  color: #bbbbbb;
+}
+
+body.dark .card-right .status select {
+  background: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #444;
+}
+
+/* Soft Blue theme */
+body.softblue .karyawan-card {
+  background: #ffffff;
+  color: #0d3b66;
+  box-shadow: 0 3px 10px rgba(60,120,255,0.18);
+}
+
+body.softblue .card-right .jabatan,
+body.softblue .card-right .status,
+body.softblue .card-right .join,
+body.softblue .card-right .kontrak {
+  color: #3a6ea5;
+}
+
+body.softblue .card-right .status select {
+  background: #ffffff;
+  color: #0d3b66;
+  border: 1px solid #a8c8ff;
+}
+/* modal */
+/* MODAL DETAIL KARYAWAN */
+.modal {
+  position: fixed;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  display: none;
+  background: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: var(--panel);
+  color: var(--text);
+  padding: 30px;
+  border-radius: 12px;
+  width: 600px;  /* diperbesar */
+  max-width: 90%;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  transition: background 0.3s, color 0.3s;
+}
+
+.modal-foto {
+  width: 100px;   /* diperbesar */
+  height: 270px;  /* diperbesar */
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+}
+
+.close {
+  float: right;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.modal h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.modal p {
+  margin: 8px 0;
+  font-size: 16px;
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+
+/* ================= THEME SUPPORT ================= */
+/* Dark theme */
+body.dark .modal-content,
+body.dashboard-dark .modal-content {
+  background: #1c1c1c;
+  color: #e0e0e0;
+  border: 1px solid #333;
+}
+
+body.dark .close,
+body.dashboard-dark .close {
+  color: #e0e0e0;
+}
+
+/* Soft Blue theme */
+body.softblue .modal-content {
+  background: #ffffff;
+  color: #0d3b66;
+}
+
+/* Classic / 3D / Compact dashboard styles can inherit colors from body variables */
+body.dashboard-3d .modal-content,
+body.dashboard-classic .modal-content,
+body.dashboard-compact .modal-content {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: auto;
+  z-index: 99999 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+/* === TOAST BOX === */
+#toastContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  position: relative;
+  min-width: 220px;
+  background: #1f1f1f !important;
+  color: #fff !important;
+  padding: 12px 18px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.25);
+  pointer-events: auto;
+  overflow: hidden;
+  border-left: 5px solid #ccc !important;
+}
+
+/* Warna per tipe */
+.toast.success { border-left-color: #4caf50 !important; }
+.toast.error   { border-left-color: #ff4d4d !important; }
+.toast.info    { border-left-color: #2196f3 !important; }
+
+/* Progress Bar */
+.toast .bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background: rgba(255,255,255,0.15);
+}
+
+.toast .bar .fill {
+  height: 100%;
+  width: 100%;
+  background: currentColor;
+  transition: width linear;
+}
+
+
+@keyframes slideIn {
+  0% { opacity: 0; transform: translateX(100%); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* ========== MODAL BACKDROP ========== */
+#trendModal {
+  position: fixed;
+  inset: 0;
+  display: none;
+
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+
+  /* AUTO-CENTER */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9999;
+  animation: modalFadeBg .25s ease-out;
+}
+
+/* ========== MODAL BOX (BESAR & ELEGAN) ========== */
+#trendModal .modal-content {
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  color: var(--text);
+
+  padding: 35px;
+  border-radius: 20px;
+
+  width: 750px;       /* DIPERBESAR */
+  max-width: 95%;     /* Tetap responsif */
+
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 22px 55px rgba(0,0,0,0.3);
+
+  transform: translateY(30px);
+  opacity: 0;
+  animation: modalPop .35s ease forwards;
+}
+
+/* ========== CLOSE BUTTON ========== */
+#trendModal .close {
+  float: right;
+  font-size: 34px;
+  cursor: pointer;
+  color: #555;
+  transition: 0.25s ease;
+}
+
+#trendModal .close:hover {
+  color: #ff4d4d;
+  transform: scale(1.2);
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes modalFadeBg {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.loading-overlay {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.4);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+
+.spinner {
+  width:40px;
+  height:40px;
+  border:4px solid #fff;
+  border-top-color:transparent;
+  border-radius:50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Overlay default */
+#loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.45);
+  display: none;                /* Tersembunyi awalnya */
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  opacity: 1;                   /* Untuk transisi */
+  transition: opacity 0.4s ease;
+}
+
+/* Spinner */
+#loadingOverlay .spinner {
+  width: 45px;
+  height: 45px;
+  border: 4px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Fade Out */
+#loadingOverlay.fade-out {
+  opacity: 0;                   /* Ini yang membuat fade-out */
+  pointer-events: none;         /* Tidak menghalangi mouse */
+}
+
+
+.confirm-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 99999;
+  justify-content: center;
+  align-items: center;
+}
+
+.confirm-box {
+  background: white;
+  padding: 20px;
+  width: 300px;
+  border-radius: 10px;
+  text-align: center;
+  animation: fadeIn .2s ease;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.confirm-actions button {
+  padding: 8px 16px;
+}
+
+.cancel {
+  background: #aaa;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.delete {
+  background: #e63946;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from { transform: scale(.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.segmented {
+  display: flex;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.seg-item {
+  flex: 1;
+  padding: 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  background: #f3f3f3;
+  transition: 0.2s;
+  font-weight: 500;
+}
+
+.seg-item.active {
+  background: #2774ff;
+  color: white;
+}
+
+/* === SLIDE LEFT PANEL === */
+.left-panel {
+  width: 340px;
+  transition: all 0.35s ease;
+  overflow: hidden;
+  background: var(--panel);
+  box-shadow: 2px 0 6px rgba(0,0,0,0.1);
+}
+
+.left-panel.closed {
+  width: 0;
+  padding: 0;
+  opacity: 0;
+}
+
+.toggle-main-btn {
+  position: absolute;
+  top: 15px;
+  left: 350px;
+  z-index: 20;
+  padding: 6px 6px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.left-panel.closed ~ .toggle-main-btn {
+  left: 10px;
+}
+
+
+
+
+</style>
+<!-- MODAL KONFIRMASI HAPUS -->
+<div id="confirmDeleteModal" class="confirm-modal">
+  <div class="confirm-box">
+    <h3>Konfirmasi Hapus</h3>
+    <p>Yakin ingin menghapus karyawan ini BESERTA seluruh datanya?</p>
+
+    <div class="confirm-actions">
+      <button id="btnCancelDelete" class="cancel">Batal</button>
+      <button id="btnConfirmDelete" class="delete">Hapus</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<div id="loadingOverlay" class="loading-overlay" style="display:none;">
+    <div class="spinner"></div>
+</div>
+
+<body class="dashboard-classic">
+  <div id="toastContainer" class="toast-container"></div>
+  <script src="../js/chart.umd.js"></script>
+<script src="../js/app.js"></script>
+  <script src="renderer_karyawan.js"></script>
+</body>
+</html>

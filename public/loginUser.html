@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login</title>
+
+<style>
+/* ===== Global iOS Style ===== */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+  background: #f2f2f7;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Card */
+.container {
+  width: 90%;
+  max-width: 380px;
+  background: #fff;
+  padding: 28px;
+  border-radius: 22px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  text-align: center;
+  position: relative;
+}
+
+/* Title */
+h2 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  font-size: 24px;
+  font-weight: 700;
+}
+.sub {
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #6c6c70;
+}
+
+/* Input Group */
+.input-group { margin-bottom: 18px; text-align: left; }
+label { font-weight: 600; margin-bottom: 6px; display:block; }
+input {
+  width: 90%;
+  padding: 13px;
+  border-radius: 14px;
+  background: #f9f9fb;
+  border: 1px solid #d0d0d3;
+  font-size: 15px;
+  transition: 0.2s;
+}
+input:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 8px rgba(0,122,255,0.3);
+  background: #fff;
+}
+
+/* Button */
+button {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 14px;
+  background: #007aff;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: .2s;
+}
+button:hover { opacity: .9; transform: translateY(-1px); }
+
+.alt-btn {
+  background: #34c759 !important;
+}
+.create-btn {
+  background: #5856d6 !important;
+}
+
+/* Message */
+.message {
+  margin-top: 12px;
+  font-size: 14px;
+  display: none;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  opacity: 0;
+  transition: .25s;
+}
+
+.modal.show { display: flex; opacity: 1; }
+
+.modal-content {
+  width: 90%;
+  max-width: 380px;
+  background: white;
+  padding: 25px;
+  border-radius: 20px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+  text-align: center;
+  animation: pop .3s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(.85); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.close {
+  position: absolute;
+  right: 20px;
+  top: 12px;
+  font-size: 26px;
+  cursor: pointer;
+  color: #444;
+}
+
+/* Toggle password text */
+.show-password {
+  position: absolute;
+  right: 12px;
+  top: 38px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Loading Spinner */
+.spinner {
+  width: 38px;
+  height: 38px;
+  border: 4px solid #ddd;
+  border-top-color: #007aff;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin: auto;
+  margin-bottom: 15px;
+  display: none;
+}
+
+@keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+.side .card{margin-bottom:12px;}
+
+/* Tombol Home Icon (SVG) Mini - Warna Hitam */
+.btn-home-icon {
+  all: unset;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+
+  width: 50px;
+  height: 50px;
+
+  background: rgba(0,0,0,0.07);  /* soft grey */
+  border: 1px solid black;
+  border-radius: 6px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.btn-home-icon:hover {
+  box-shadow: 0 0 6px rgba(0,0,0,0.4);
+  transform: translateY(-1px);
+}
+
+.btn-home-icon svg {
+  pointer-events: none;
+}
+
+
+
+
+
+</style>
+</head>
+
+<body>
+<div class="container">
+<button id="btnHome" class="btn-home-icon">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+       stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 9l9-6 9 6"></path>
+    <path d="M9 22V12h6v10"></path>
+  </svg>
+</button>
+
+
+
+  <div class="spinner" id="spinner"></div>
+  <h2>Login</h2>
+
+  <div class="sub">Silahkan login untuk melanjutkan</div>
+
+
+  <!-- Email -->
+  <div class="input-group">
+    <label>Email</label>
+    <input type="email" id="username" placeholder="Masukkan email">
+  </div>
+
+  <!-- Password -->
+  <div class="input-group" style="position:relative">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Masukkan password">
+    <span id="toggleLoginPass" class="show-password">Show</span>
+  </div>
+
+  <div style="text-align:left; margin-bottom:15px;">
+    <input type="checkbox" id="rememberMe"> Ingat saya
+  </div>
+
+  <button id="btnLogin">Login</button>
+  <button id="btnCreate" class="create-btn">Buat Akun</button>
+  <div class="message" id="msg"></div>
+
+</div>
+
+<!-- Modal Create Account -->
+<div id="createModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="closeCreate">&times;</span>
+    <h3 style="margin-top:0;">Buat Akun Baru</h3>
+
+    <div class="input-group">
+      <label>Username</label>
+      <input type="text" id="newUsername" placeholder="Masukkan username">
+    </div>
+
+    <div class="input-group">
+      <label>Email</label>
+      <input type="email" id="newEmail" placeholder="Masukkan email">
+    </div>
+
+    <div class="input-group" style="position:relative">
+      <label>Password</label>
+      <input type="password" id="newPassword" placeholder="Masukkan password">
+      <span id="toggleCreatePass" class="show-password">Show</span>
+    </div>
+
+    <button id="btnSubmitCreate" class="alt-btn">Daftar</button>
+    <div class="message" id="msgCreate"></div>
+  </div>
+</div>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+/* =====================
+   Supabase Setup
+===================== */
+const SUPABASE_URL = "https://hlleyvltrlopiagyrvbr.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbGV5dmx0cmxvcGlhZ3lydmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NjE3NTksImV4cCI6MjA4MDQzNzc1OX0.L_8J118cgDWAgxe4B7t6RxU3gjEXzKWDvj53cIMFX7k";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const spinner = document.getElementById("spinner");
+document.getElementById("btnHome").addEventListener("click", () => {
+  window.location.href = "index.html";  // ganti sesuai halaman home kamu
+});
+
+
+/* =====================
+   Utility Functions
+===================== */
+function showMessage(msg, color="red", dom="msg"){
+  const el = document.getElementById(dom);
+  el.innerText = msg;
+  el.style.color = color;
+  el.style.display = "block";
+}
+
+/* =====================
+   Toggle Password
+===================== */
+document.getElementById("toggleLoginPass").onclick = () => {
+  const pass = document.getElementById("password");
+  pass.type = pass.type === "password" ? "text" : "password";
+};
+document.getElementById("toggleCreatePass").onclick = () => {
+  const pass = document.getElementById("newPassword");
+  pass.type = pass.type === "password" ? "text" : "password";
+};
+
+/* =====================
+   Remember Me Load
+===================== */
+window.onload = () => {
+  const saved = JSON.parse(localStorage.getItem("remember")) || {};
+  if(saved.email) document.getElementById("username").value = saved.email;
+  if(saved.email) document.getElementById("rememberMe").checked = true;
+};
+
+/* =====================
+      LOGIN
+===================== */
+document.getElementById("btnLogin").onclick = async () => {
+
+  const email = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value;
+  const remember = document.getElementById("rememberMe").checked;
+
+
+  if (!email || !password) return showMessage("Isi semua field!");
+
+  spinner.style.display = "block";
+
+  const { data: authData, error: authErr } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+  spinner.style.display = "none";
+
+  if (authErr) return showMessage("Login gagal: " + authErr.message);
+
+  // Ambil data user dari tabel
+  const { data: userRow, error:userErr } = await supabaseClient
+    .from("users")
+    .select("*")
+    .eq("auth_id", authData.user.id)
+    .single();
+
+  if (!userRow || userErr) return showMessage("User tidak ditemukan!");
+
+  // Simpan user di localStorage
+  localStorage.setItem("user", JSON.stringify({
+    auth_id: userRow.auth_id,
+    username: userRow.username,
+    email: userRow.email
+  }));
+
+  // Remember Me (hanya simpan email)
+  if (remember) localStorage.setItem("remember", JSON.stringify({ email }));
+  else localStorage.removeItem("remember");
+
+  // Redirect dinamis
+  const redirect = localStorage.getItem("redirectAfterLogin");
+  if (redirect) {
+    localStorage.removeItem("redirectAfterLogin");
+    window.location.href = redirect;
+  } else {
+    window.location.href = "index.html";
+  }
+};
+
+
+/* =====================
+   MODAL CREATE ACCOUNT
+===================== */
+const createModal = document.getElementById("createModal");
+document.getElementById("btnCreate").onclick = () => createModal.classList.add("show");
+document.getElementById("closeCreate").onclick = () => createModal.classList.remove("show");
+window.onclick = (e) => { if(e.target === createModal) createModal.classList.remove("show"); };
+
+/* =====================
+      CREATE ACCOUNT
+===================== */
+document.getElementById("btnSubmitCreate").onclick = async () => {
+  const msgCreate = "msgCreate";
+  const username = document.getElementById("newUsername").value.trim();
+  const email = document.getElementById("newEmail").value.trim();
+  const password = document.getElementById("newPassword").value;
+
+  if (!username || !email || !password) return showMessage("Isi semua field!", "red", msgCreate);
+
+  spinner.style.display = "block";
+
+  const { data: authData, error: authErr } = await supabaseClient.auth.signUp({ email, password });
+
+  spinner.style.display = "none";
+
+  if (authErr) return showMessage("Gagal membuat akun: " + authErr.message, "red", msgCreate);
+
+  await supabaseClient.from("users").insert([{
+    auth_id: authData.user.id,
+    username,
+    role: "user"
+  }]);
+
+  showMessage("Akun berhasil dibuat! Verifikasi email Anda sebelum login.", "green", msgCreate);
+
+  setTimeout(() => {
+    createModal.classList.remove("show");
+    location.reload();
+  }, 2000);
+};
+</script>
+
+</body>
+</html>

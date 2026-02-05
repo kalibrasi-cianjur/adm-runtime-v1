@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MTBF - Scan Part</title>
+
+  <style>
+    body{font-family:system-ui;padding:16px;background:#f4f7fb}
+    .card{background:white;padding:12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.06);max-width:640px;margin:12px auto}
+    input,select,button{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #ddd}
+    #reader{width:100%;height:280px;background:#000;border-radius:8px;overflow:hidden}
+    .row{display:flex;gap:8px}
+    .row > *{flex:1}
+    .offlineNotice{color:#b64949;font-weight:600}
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h3>MTBF — Scan Part</h3>
+  <div id="reader"></div>
+
+  <form id="scanForm">
+    <input id="barcode" placeholder="Hasil scan / isi manual" autocomplete="off" />
+    <input id="part" placeholder="Nama Part" />
+    <input id="mesin" placeholder="Mesin" />
+    <input id="area" placeholder="Area" />
+    <input id="operator" placeholder="Operator" />
+
+    <div class="row">
+      <button id="btnSend" type="button">KIRIM</button>
+      <button id="btnClear" type="button">BERSIHKAN</button>
+    </div>
+
+    <div id="status" style="margin-top:8px;font-size:13px;"></div>
+  </form>
+
+  <hr />
+
+  <div>
+    <small>Login</small>
+    <input id="email" value="guest@example.com">
+    <input id="password" value="123" type="password">
+    <button id="btnLogin">LOGIN</button>
+    <div id="loginMsg"></div>
+  </div>
+
+  <div style="margin-top:10px">
+    <div id="offlineQueueInfo"></div>
+  </div>
+</div>
+
+<!-- ✅ LIBRARY SCANNER LOKAL -->
+<script src="./html5-qrcode.min.js"></script>
+
+<!-- ✅ FIREBASE + LOGIC -->
+<script type="module">
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB41h2M_OqiEha1gYLjmKhkJOmpSjKx8u4",
+    authDomain: "form-1707.firebaseapp.com",
+    databaseURL: "https://form-1707-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "form-1707"
+  };
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  const auth = getAuth(app);
+
+  const barcodeEl  = document.getElementById('barcode');
+  const partEl     = document.getElementById('part');
+  const mesinEl    = document.getElementById('mesin');
+  const areaEl     = document.getElementById('area');
+  const operatorEl= document.getElementById('operator');
+  const statusEl   = document.getElementById('status');
+  const offlineInfo= document.getElementById('offlineQueueInfo');
+
+  const emailEl    = document.getElementById('email');
+  const pwdEl      = document.getElementById('password');
+  const btnLogin   = document.getElementById('btnLogin');
+  const loginMsg   = document.getElementById('loginMsg');
+
+  // === START CAMERA SCANNER ===
+  if (window.Html5Qrcode) {
+    const scanner = new Html5Qrcode("reader");
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      decoded => {
+        barcodeEl.value = decoded;
+        statusEl.textContent = "Scan berhasil";
+      },
+      err => {}
+    );
+  } else {
+    alert("Library Html5Qrcode tidak termuat!");
+  }
+
+  // === OFFLINE QUEUE ===
+  const QUEUE_KEY = 'mtbf_scan_offline_v1';
+
+  function loadQueue(){
+    try { return JSON.parse(localStorage.getItem(QUEUE_KEY)) || [] }
+    catch { return [] }
+  }
+
+  function saveQueue(q){
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+    renderQueueInfo();
+  }
+
+  function renderQueueInfo(){
+    const q = loadQueue();
+    offlineInfo.textContent = q.length
+      ? `Offline queue: ${q.length} item`
+      : 'Tidak ada data offline';
+  }
+
+  renderQueueInfo();
+
+  async function sendScan(payload){
+    const r = ref(db, 'mtbf_scans');
+    await push(r, {
+      ...payload,
+      status: 'PENDING',
+      created_at: serverTimestamp()
+    });
+  }
+
+  async function flushQueue(){
+    if(!auth.currentUser) return;
+    let q = loadQueue();
+    for(const item of q){
+      try {
+        await sendScan(item);
+      } catch {
+        return;
+      }
+    }
+    localStorage.removeItem(QUEUE_KEY);
+    renderQueueInfo();
+  }
+
+  // === SUBMIT DATA ===
+  document.getElementById('btnSend').onclick = async () => {
+    const payload = {
+      barcode: barcodeEl.value.trim(),
+      part: partEl.value.trim(),
+      mesin: mesinEl.value.trim(),
+      area: areaEl.value.trim(),
+      operator: operatorEl.value.trim() || auth.currentUser?.email || 'UNKNOWN'
+    };
+
+    if (!payload.barcode || !payload.mesin) {
+      statusEl.textContent = "Barcode & Mesin wajib diisi!";
+      statusEl.style.color="red";
+      return;
+    }
+
+    try {
+      if (navigator.onLine && auth.currentUser) {
+        await sendScan(payload);
+        statusEl.textContent = "✅ Terkirim ke Firebase";
+      } else {
+        const q = loadQueue();
+        q.push(payload);
+        saveQueue(q);
+        statusEl.textContent = "⚠️ Disimpan Offline";
+      }
+    } catch {
+      const q = loadQueue();
+      q.push(payload);
+      saveQueue(q);
+      statusEl.textContent = "❌ Gagal kirim, disimpan offline";
+    }
+
+    barcodeEl.value=""; partEl.value="";
+  };
+
+  document.getElementById('btnClear').onclick = ()=>{
+    barcodeEl.value="";
+    partEl.value="";
+    mesinEl.value="";
+    areaEl.value="";
+  };
+
+  // === LOGIN ===
+  btnLogin.onclick = async ()=>{
+    try {
+      loginMsg.textContent = "Login...";
+      await signInWithEmailAndPassword(auth, emailEl.value, pwdEl.value);
+      loginMsg.textContent = "✅ Login sukses";
+      flushQueue();
+    } catch(e) {
+      loginMsg.textContent = "❌ Login gagal";
+    }
+  };
+
+  onAuthStateChanged(auth, user=>{
+    if(user) loginMsg.textContent = `Signed in: ${user.email}`;
+    else loginMsg.textContent = "Belum login";
+  });
+
+  window.addEventListener('online', flushQueue);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Report Pengantian Sparepart</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+
+<style>
+:root{
+  --bg: #06060a;
+  --card: #0d0f14;
+  --muted: #7a7f88;
+  --accent1: #3b82f6;
+  --accent2: #1e3a8a;
+  --success: #00e676;
+  --danger: #ff4d4f;
+  --radius: 14px;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;font-family:Inter, sans-serif;}
+body{
+  background-color: var(--bg);
+  color:#e6eef6;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding:24px;
+}
+.wrap{
+  display:grid;
+  grid-template-columns: 1fr 280px;
+  gap:16px;
+  width:100%;
+  max-width:980px;
+}
+@media (max-width:920px){
+  .wrap{grid-template-columns:1fr;}
+}
+.card{
+  background: var(--card);
+  border-radius: var(--radius);
+  padding:18px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.brand{display:flex;align-items:center;gap:12px;}
+.logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  line-height: 1;
+  color: #05060a;
+}
+.title h2{margin:0;font-size:16px;}
+.title p{margin:0;font-size:12px;color:var(--muted);}
+.actions{display:flex;gap:8px;}
+.btn{
+  border:0;padding:10px 14px;border-radius:10px;font-weight:600;
+  cursor:pointer;
+  background:linear-gradient(90deg,var(--accent2),var(--accent1));
+  color:#05060a;
+  transition: transform .2s, box-shadow .2s;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 0 12px var(--accent2);}
+.btn:active{transform:translateY(1px);}
+.btn.ghost{
+  background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted);
+}
+input[type=text],textarea{
+  width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);
+  background:#101217;color:#e6eef6;font-size:14px;outline:none;
+}
+input[type=text]:focus,textarea:focus{border-color:var(--accent2);box-shadow:0 0 12px rgba(0,208,255,0.3);}
+textarea{min-height:80px;resize:vertical;}
+.photo-wrap{margin-top:12px;}
+.photo-box{
+  width:100%;height:260px;border-radius:12px;border:2px dashed rgba(255,255,255,0.05);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  overflow:hidden;background:#101217;position:relative;
+  transition:0.3s;
+}
+.photo-box:hover{border-color:var(--accent2);}
+.photo-box img{width:100%;height:100%;object-fit:cover;}
+.photo-cta{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;}
+.photo-actions{display:flex;gap:10px;margin-top:10px;}
+.loading-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;display:none;
+  align-items:center;justify-content:center;background:rgba(0,0,0,0.7);
+  z-index:9999;
+}
+.spinner{
+  width:70px;height:70px;border-radius:50%;
+  border:5px solid rgba(255,255,255,0.1);
+  border-top-color:var(--accent1);
+  animation: spin 1s linear infinite;
+}
+@keyframes spin{100%{transform:rotate(360deg);}}
+
+
+/* ===== TOAST CONTAINER ===== */
+#toastArea {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  #toastArea {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+  }
+}
+
+/* ===== SINGLE TOAST ===== */
+.toast-item {
+  min-width: 240px;
+  max-width: 320px;
+  background: #11141a;
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto;
+
+  opacity: 0;
+  transform: translateX(40px);
+  animation: toastIn .35s ease forwards;
+}
+
+/* ICON + TEXT */
+.toast-item .msg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ===== PROGRESS LINE ===== */
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  animation: toastProgress 3s linear forwards;
+}
+
+/* COLORS */
+.toast-item.success { border-left: 6px solid #2ecc71; }
+.toast-item.success .toast-progress { background: #2ecc71; }
+
+.toast-item.error { border-left: 6px solid #e74c3c; }
+.toast-item.error .toast-progress { background: #e74c3c; }
+
+.toast-item.warning { border-left: 6px solid #f1c40f; }
+.toast-item.warning .toast-progress { background: #f1c40f; }
+
+/* ===== ANIMASI MASUK ===== */
+@keyframes toastIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ===== ANIMASI KELUAR ===== */
+@keyframes toastOut {
+  to {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+/* ===== ANIMASI PROGRESS ===== */
+@keyframes toastProgress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+
+.side .card{margin-bottom:12px;}
+.btn-logout-neon{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  border-radius:8px;border:1px solid cyan;color:cyan;background:rgba(0,255,255,0.05);
+  cursor:pointer;transition:0.2s;
+}
+.btn-logout-neon:hover{box-shadow:0 0 12px cyan;transform:translateY(-2px);}
+
+
+
+.btn-wa-modern {
+  width: 100%;
+  margin-top: 15px;
+  padding: 14px 18px;
+  background: #25D366;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  transition: .25s;
+}
+
+.btn-wa-modern svg {
+  width: 22px;
+  height: 22px;
+  fill: #fff;
+}
+
+.btn-wa-modern:hover {
+  background: #1ebe5b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+}
+
+.btn-wa-modern:active {
+  transform: scale(0.98);
+}
+
+/* MODERN RECEIPT STYLE */
+#downloadPreview {
+  background: #f9f9f9;
+  color: #222;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 0 8px rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.25);
+    position: relative;
+  overflow: hidden;
+}
+
+.watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  font-size: 130px;
+  font-weight: 800;
+  color: rgba(0,0,0,0.06);   /* samar */
+  letter-spacing: 4px;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+
+.receipt-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.receipt-subtext {
+  text-align: center;
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 18px;
+}
+
+.receipt-line {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #ccc, transparent);
+  margin: 14px 0;
+}
+
+#downloadPreview p {
+  font-size: 15px;
+  margin: 6px 0;
+  line-height: 1.4;
+}
+
+#downloadPreview img {
+  width: 100%;
+  border-radius: 12px;
+  margin-top: 14px;
+  border: 1px solid #ddd;
+}
+.receipt-table {
+  display: table;
+  width: 100%;
+  font-size: 16px;
+  margin-top: 15px;
+}
+
+.receipt-row {
+  display: table-row;
+}
+
+.receipt-label,
+.receipt-colon,
+.receipt-value {
+  display: table-cell;
+  padding: 3px 0;
+}
+
+.receipt-label {
+  width: 130px;
+  font-weight: 600;
+}
+
+.receipt-colon {
+  width: 10px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.receipt-value {
+  font-weight: 500;
+}
+
+
+
+#namaDept,
+#mesin,
+#namaPart,
+#area,
+#pic {
+  text-transform: uppercase;
+}
+
+.preview-data {
+  border-radius: 12px;
+  padding: 0; /* padding dipindah ke preview-summary */
+  width: auto; /* sesuaikan */
+  color: #fff;
+}
+
+.preview-title {
+  display: block;
+  text-align: center;
+  background-color: #ff4d4f; /* merah */
+  padding: 8px 0;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  font-size: 18px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.preview-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 16px; /* jarak isi dari tepi */
+  background-color: #1a1c22; /* warna isi berbeda */
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.info-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  font-weight: 600;
+  text-align: right;
+}
+
+.value {
+  text-align: left;
+  word-wrap: break-word;
+}
+
+
+
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 70px;
+  height: 70px;
+  overflow: hidden;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-info h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #00d0ff;
+  text-shadow: 0 0 6px #00d0ff, 0 0 12px #ff2d95;
+}
+
+.user-info p {
+  margin: 2px 0 0 0;
+  font-size: 14px;
+  color: #7a7f88;
+}
+
+
+.history-section {
+  max-height: auto;      /* batas tinggi, scrollable jika lebih */
+  overflow-y: auto;
+  padding: 8px;
+  background-color: ##fff; /* merah */
+  border-radius: 12px;
+  width: 103%;
+  margin-top: 12px;
+  color: #fff;            /* teks default putih */
+}
+
+.history-title {
+ display: block;
+  text-align: center;
+  background-color: #ff4d4f;
+  padding: 8px 0;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  font-size: 18px;
+  width: 100%;
+  box-sizing: border-box;
+
+}
+
+.history-list p.history-item {
+  font-size: 10px;
+  margin: 4px 0;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  word-break: break-word;
+}
+
+.history-list p.history-item span {
+  margin-right: 10px;
+}
+
+/* Scrollbar tipis */
+.history-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-section::-webkit-scrollbar-thumb {
+  background-color: #1a1c22;
+  border-radius: 3px;
+}
+
+
+
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+<div id="toastArea"></div>
+<div class="wrap">
+  <!-- LEFT -->
+  <div class="card">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">📄</div>
+        <div class="title"><h2>Report Penggantian Sparepart</h2></div>
+      </div>
+      <div class="actions">
+        <button id="btnLogout" class="btn-logout-neon">Logout</button>
+      </div>
+    </div>
+
+    <form id="reportForm" autocomplete="off" novalidate>
+      <div style="display:grid;gap:12px;">
+        <div>
+          <label>Department</label>
+          <input type="text" id="namaDept" list="deptList" placeholder="Pilih Department">
+          <datalist id="deptList">
+            <option value="ENGINEERING"><option value="PACKAGING"><option value="UTILITY"><option value="WAREHOUSE"><option value="WATER RESOURCES">
+          </datalist>
+        </div>
+        <div>
+          <label>Mesin</label>
+          <input type="text" id="mesin" list="mesinList" placeholder="Pilih atau ketik mesin">
+          <datalist id="mesinList">
+            <option value="DUMPER"><option value="BLOWING"><option value="OVEN"><option value="FILLER"><option value="CONVEYOR">
+            <option value="CAMERA INSPECTION"><option value="LABEL"><option value="CAP SEAL"><option value="AUTOPACKER"><option value="WEIGHING"><option value="PALLETIZER">
+          </datalist>
+        </div>
+        <div>
+          <label>Nama Part</label>
+          <input type="text" id="namaPart" placeholder="Masukkan nama part">
+        </div>
+        <div>
+          <label>Area</label>
+          <input type="text" id="area" list="areaList" placeholder="Pilih atau ketikkan area">
+          <datalist id="areaList">
+            <option value="LINE 1"><option value="LINE 2"><option value="LINE 3"><option value="LINE 4"><option value="LINE 5"><option value="LINE 6"><option value="LINE 7"><option value="LINE 8">
+          </datalist>
+        </div>
+        <div>
+          <label>PIC</label>
+          <input type="text" id="pic" placeholder="Nama PIC" readonly>
+        </div>
+      </div>
+
+      <div class="photo-wrap">
+        <label>Ambil Foto</label>
+        <div class="photo-box" id="previewBox" tabindex="0">
+          <div class="photo-cta">
+            <div style="font-size:22px;">📸</div>
+            <div style="font-size:14px;color:var(--muted)">Ketuk untuk buka kamera</div>
+          </div>
+        </div>
+        <input type="file" accept="image/*" capture="environment" id="photoInput" style="display:none">
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button id="btnUpload" type="button" class="btn" style="flex:1">Kirim</button>
+      </div>
+    </form>
+  </div>
+
+<div id="downloadModal" style="
+  display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+  justify-content:center; align-items:center;
+  z-index:99999; padding:20px;
+">
+  <div style="
+    background:#0d0f14;
+    padding:20px;
+    border-radius:14px;
+    width:340px;
+    max-height:90vh;     /* <- batas tinggi modal */
+    overflow-y:auto;     /* <- bisa scroll */
+    box-sizing:border-box;
+  ">
+    <h3 style="margin:0 0 10px;">Data Berhasil Dikirim</h3>
+    <h5 style="margin:0 0 20px; color:#aaa;">Download File atau Share</h5>
+
+    <div id="downloadPreview">
+    <div class="watermark">1707</div>
+  <div class="receipt-title">REPORTING SYSTEM</div>
+  <div class="receipt-subtext">PT. TIRTA FRESINDO JAYA - 1707</div>
+
+<div class="receipt-table">
+  <div class="receipt-row">
+    <span class="receipt-label">Dept</span>
+    <span class="receipt-colon">:</span>
+    <span class="receipt-value" id="dDept"></span>
+  </div>
+
+  <div class="receipt-row">
+    <span class="receipt-label">Mesin</span>
+    <span class="receipt-colon">:</span>
+    <span class="receipt-value" id="dMesin"></span>
+  </div>
+
+  <div class="receipt-row">
+    <span class="receipt-label">Nama Part</span>
+    <span class="receipt-colon">:</span>
+    <span class="receipt-value" id="dPart"></span>
+  </div>
+
+  <div class="receipt-row">
+    <span class="receipt-label">Area</span>
+    <span class="receipt-colon">:</span>
+    <span class="receipt-value" id="dArea"></span>
+  </div>
+
+  <div class="receipt-row">
+    <span class="receipt-label">PIC</span>
+    <span class="receipt-colon">:</span>
+    <span class="receipt-value" id="dPic"></span>
+  </div>
+
+  <div class="receipt-row">
+    <span class="receipt-label">Time</span>
+    <span class="receipt-colon">:</span>
+    <span class="receipt-value" id="dTime"></span>
+  </div>
+</div>
+
+
+
+  <div class="receipt-line"></div>
+
+  <img id="dFoto">
+
+  <div class="receipt-line"></div>
+  <p style="text-align:center; font-size:12px;">*** TERIMA KASIH ***</p>
+
+</div>
+
+    <button id="btnDownloadImg" class="btn" style="width:100%; margin-top:15px;">Simpan</button>
+
+    <button id="btnShareImg" class="btn-wa-modern" style="margin-top:10px;">
+      <!-- ikon WA -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <path
+          d="M256.064 49.53c-112.29 0-203.356 91.07-203.356 203.36
+          0 35.84 9.37 70.74 27.28 101.51L64 448l97.45-15.97c29.25
+          15.98 62.12 24.43 94.96 24.43h.01c112.29 0 203.35-91.07
+          203.35-203.36 0-54.32-21.16-105.47-59.6-143.91-38.44-38.45
+          -89.59-59.59-143.99-59.59zm118.71 290.09c-5.06 14.2-29.79
+          27.07-42.04 28.72-10.79 1.43-24.47 2.06-39.56-2.44-9.11-2.82
+          -20.76-6.7-35.67-13.09-62.72-27.1-103.48-92.65-106.54-96.94
+          -3.06-4.29-25.45-33.87-25.45-64.74 0-30.87 16.26-46.06
+          22.05-52.42 5.79-6.36 12.67-7.94 16.88-7.94 4.22 0 8.44.04
+          12.11.23 3.9.19 9.1-.74 14.24 10.85 5.06 11.39 17.19 39.47
+          18.73 42.33 1.54 2.86 2.57 6.22.51 9.93-2.06 3.71-3.09 6.22
+          -6.09 9.71-3 3.49-6.3 7.79-8.99 10.46-3 3-6.12 6.25-2.64
+          12.31 3.49 6.06 15.51 25.6 33.3 41.34 22.9 20.29 41.77 26.6
+          48.83 29.53 7.06 2.93 11.16 2.45 15.32-1.47 4.17-3.92 17.59
+          -18.36 22.28-24.65 4.68-6.29 9.36-5.23 15.8-3.14 6.45 2.09
+          40.58 19.13 47.55 22.58 6.98 3.46 11.64 5.14 13.35 7.98
+          1.72 2.82 1.72 14.02-3.35 28.23z"
+          fill="currentColor"
+        />
+      </svg>
+      <span>Share via WhatsApp</span>
+    </button>
+
+  </div>
+</div>
+
+
+<div class="card user-preview-card">
+  <div class="user-header">
+    <div class="avatar">
+      <!-- Ganti avatar CSS dengan gambar -->
+      <img src="avatar/worker1.png" alt="Worker Avatar" class="avatar-img">
+    </div>
+    <div class="user-info">
+      <h3 id="username">Welcome, —</h3>
+      <p id="email">—</p>
+    </div>
+  </div>
+
+
+<!-- Preview Data -->
+<div class="preview-data">
+  <strong class="preview-title">Preview</strong>
+  <div id="previewSummary" class="preview-summary">
+    <div class="info-row">
+      <span class="label">Dept:</span>
+      <span class="value" id="sDept">—</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Mesin:</span>
+      <span class="value" id="sMesin">—</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Nama Part:</span>
+      <span class="value" id="sPart">—</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Area:</span>
+      <span class="value" id="sArea">—</span>
+    </div>
+    <div class="info-row">
+      <span class="label">PIC:</span>
+      <span class="value" id="sPic">—</span>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- History Section -->
+<div class="history-section">
+  <strong class="history-title">History</strong>
+  <div class="history-list" id="historyList">
+    <!-- Data dari Supabase akan dimasukkan di sini -->
+  </div>
+</div>
+
+
+
+
+<script>
+const SUPABASE_URL = "https://hlleyvltrlopiagyrvbr.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbGV5dmx0cmxvcGlhZ3lydmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NjE3NTksImV4cCI6MjA4MDQzNzc1OX0.L_8J118cgDWAgxe4B7t6RxU3gjEXzKWDvj53cIMFX7k";
+const supabaseClient = supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+
+const previewBox = document.getElementById("previewBox");
+const photoInput = document.getElementById("photoInput");
+const btnUpload = document.getElementById("btnUpload");
+const loadingOverlay = document.getElementById("loadingOverlay");
+const toastArea = document.getElementById("toastArea");
+
+const namaDeptEl = document.getElementById("namaDept");
+const namaPartEl = document.getElementById("namaPart");
+const mesinEl = document.getElementById("mesin");
+const areaEl = document.getElementById("area");
+const picEl = document.getElementById("pic");
+
+const sDept = document.getElementById("sDept");
+const sMesin = document.getElementById("sMesin");
+const sPart = document.getElementById("sPart");
+const sArea = document.getElementById("sArea");
+const sPic = document.getElementById("sPic");
+const usernameEl = document.getElementById("username");
+
+ const logoutBtn = document.getElementById("btnLogout");
+
+if (logoutBtn) logoutBtn.addEventListener("click", logout);
+picEl.value = username;
+let uploadInProgress = false;
+let draftKey = "reportDraft_v2";
+let actionCompleted = false;
+let currentUserEmail = null;
+let currentUsername = null;
+  const IDLE_LIMIT = 5 * 60 * 1000;
+  let idleTimer;
+
+
+/* ======================
+   AMBIL DATA USER LOGIN
+====================== */
+async function loadUserData() {
+  const { data: { user }, error } = await supabaseClient.auth.getUser();
+
+  if (!user) {
+    console.log("User belum login");
+    // redirect ke login jika perlu
+    location.href = "loginUser.html";
+    return;
+  }
+
+  const currentUserEmail = user.email;
+  let currentUsername = "—";
+
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("users")
+    .select("username")
+    .eq("auth_id", user.id)
+    .single();
+
+  if (!profileError && profile) {
+    currentUsername = profile.username;
+  }
+
+  // Update card sidebar
+  document.getElementById("username").textContent = currentUsername;
+  document.getElementById("email").textContent = currentUserEmail;
+
+  console.log("Login sebagai:", currentUsername, currentUserEmail);
+  const picEl = document.getElementById("pic");
+  picEl.value = currentUsername;
+    loadHistoryByPIC(currentUsername);
+}
+
+
+async function loadHistoryByPIC(pic) {
+  if (!pic) return;
+
+  const { data, error } = await supabaseClient
+    .from("reports")
+    .select("*")
+    .eq("pic", pic)
+    .order("created_at", { ascending: false })
+    //.limit(all);
+
+  const historyList = document.getElementById("historyList");
+  historyList.innerHTML = "";
+
+  if (error) {
+    historyList.innerHTML = "<p>Gagal memuat history</p>";
+    console.error(error);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    historyList.innerHTML = "<p>Tidak ada history</p>";
+    return;
+  }
+
+data.forEach(item => {
+  const p = document.createElement("p");
+  p.classList.add("history-item");
+
+  // Semua info dalam satu baris, dipisah dengan ` | `
+  p.textContent = `Time: ${item.created_at || "-"} |> Dept: ${item.namaDept || "-"} |> Mesin: ${item.mesin || "-"} |> Part: ${item.nama_part || "-"} |> Area: ${item.area || "-"}`;
+
+  historyList.appendChild(p);
+});
+}
+
+function authGuard() {
+  const raw = localStorage.getItem("user");
+
+  // Jika tidak ada user → wajib login dulu
+  if (!raw) {
+    location.href = "loginUser.html";
+    return null;
+  }
+
+  // Jika ada user → parse dan return
+  try {
+    return JSON.parse(raw);
+  } catch {
+    // Jika datanya rusak → clear dan login lagi
+    localStorage.removeItem("user");
+    location.href = "loginUser.html";
+    return null;
+  }
+}
+
+  //============================
+  //Auto logout
+  //========================
+  function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(autoLogout, IDLE_LIMIT);
+}
+
+// Auto logout
+async function autoLogout() {
+  console.log("Auto logout karena tidak ada aktivitas.");
+
+  // signOut Supabase (jika masih login)
+  try {
+    await supabaseClient.auth.signOut({ scope: "global" });
+  } catch(e){}
+
+  // Bersihkan localStorage
+  //localStorage.removeItem("remember");
+  localStorage.removeItem("user");
+  localStorage.removeItem("redirectAfterLogin");
+
+  // Redirect ke login
+  window.location.href = "loginUser.html";
+}
+
+// Event yang dianggap aktivitas
+["click", "mousemove", "keypress", "scroll", "touchstart"].forEach(evt => {
+  window.addEventListener(evt, resetIdleTimer);
+});
+
+// Start timer ketika halaman dibuka
+resetIdleTimer();
+
+
+function forceUppercase(ids) {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", function () {
+      this.value = this.value.toUpperCase();
+    });
+  });
+}
+
+forceUppercase(["namaDept", "mesin", "namaPart", "area", "pic"]);
+
+
+function toast(message, type = "success") {
+  const container = document.getElementById("toastArea");
+
+  const item = document.createElement("div");
+  item.className = `toast-item ${type}`;
+
+  item.innerHTML = `
+    <div class="msg">${message}</div>
+    <div class="toast-progress"></div>
+  `;
+
+  container.appendChild(item);
+
+  // Auto close setelah 3.2 detik
+  setTimeout(() => {
+    item.style.animation = "toastOut .4s ease forwards";
+    setTimeout(() => item.remove(), 400);
+  }, 4200);
+}
+
+
+
+
+function updatePreview(){
+  sDept.textContent = namaDeptEl.value||"—";
+  sMesin.textContent = mesinEl.value||"—";
+  sPart.textContent = namaPartEl.value||"—";
+  sArea.textContent = areaEl.value||"—";
+  sPic.textContent = picEl.value||"—";
+}
+
+[namaDeptEl,mesinEl,namaPartEl,areaEl,picEl].forEach(inp=>{
+  inp.addEventListener("input",()=>{updatePreview(); saveDraft();});
+});
+
+function saveDraft(){
+  const draft={namaDept:namaDeptEl.value,mesin:mesinEl.value,namaPart:namaPartEl.value,area:areaEl.value,pic:picEl.value};
+  localStorage.setItem(draftKey,JSON.stringify(draft));
+}
+
+function loadDraft(){
+  const raw=localStorage.getItem(draftKey);
+  if(!raw) return;
+  const d=JSON.parse(raw);
+  namaDeptEl.value=d.namaDept||"";mesinEl.value=d.mesin||"";namaPartEl.value=d.namaPart||"";areaEl.value=d.area||"";picEl.value=d.pic||"";
+  updatePreview();
+}
+loadDraft();
+
+function sanitize(str) {
+  return str.replace(/[^a-zA-Z0-9\-_.]/g, "_");
+}
+
+function getTimestamp(){
+  const d = new Date();
+  const pad = n => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+function showImagePreview(file){
+  const img=document.createElement("img");
+  img.src = URL.createObjectURL(file);
+  img.style.width = "80%";
+  img.style.height = "80%";
+  img.style.objectFit = "cover";
+  previewBox.innerHTML = "";
+  previewBox.appendChild(img);
+}
+
+// Klik photo-box => buka menu pilihan
+previewBox.addEventListener("click", () => {
+  const option = confirm("Klik OK untuk ambil foto dari kamera, CANCEL untuk pilih dari gallery");
+  if(option){
+    openCamera();
+  } else {
+    photoInput.click();
+  }
+});
+
+async function openCamera() {
+  let videoEl = document.createElement("video");
+  videoEl.autoplay = true;
+  videoEl.playsInline = true;
+  videoEl.style.width = "100%";
+  videoEl.style.height = "100%";
+  previewBox.innerHTML = "";
+  previewBox.appendChild(videoEl);
+
+  try {
+    // 1. Ambil resolusi tinggi
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "environment",
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    });
+
+    videoEl.srcObject = stream;
+
+    // Tombol ambil foto
+    const snapBtn = document.createElement("button");
+    snapBtn.textContent = "📸 Ambil Foto";
+    snapBtn.className = "btn";
+    snapBtn.style.position = "absolute";
+    snapBtn.style.bottom = "10px";
+    snapBtn.style.left = "50%";
+    snapBtn.style.transform = "translateX(-50%)";
+    previewBox.appendChild(snapBtn);
+
+    snapBtn.addEventListener("click", () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      const originalW = videoEl.videoWidth;
+      const originalH = videoEl.videoHeight;
+
+      // 2. Resize ke MAX 1280px (anti pecah)
+      const maxW = 1280;
+      const scale = originalW > maxW ? maxW / originalW : 1;
+
+      canvas.width = originalW * scale;
+      canvas.height = originalH * scale;
+
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      // 3. Kompres kualitas tinggi (0.85)
+      canvas.toBlob(
+        blob => {
+          const file = new File(
+            [blob],
+            `camera_${Date.now()}.jpg`,
+            { type: "image/jpeg" }
+          );
+
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          photoInput.files = dt.files;
+
+          showImagePreview(file);
+          toast("Foto berhasil diambil (HD + compressed)", "info", 1800);
+
+          stream.getTracks().forEach(t => t.stop());
+        },
+        "image/jpeg",
+        0.85
+      );
+    });
+
+  } catch (e) {
+    toast("Gagal akses kamera: " + e.message, "error");
+  }
+}
+
+
+// Upload dari gallery
+photoInput.addEventListener("change",()=>{if(photoInput.files[0]) showImagePreview(photoInput.files[0]); toast("Foto terpilih","info",1800);});
+
+// Upload form
+btnUpload.addEventListener("click", async () => {
+  if (uploadInProgress) return;
+  if (!namaDeptEl.value || !mesinEl.value || !namaPartEl.value || !areaEl.value || !picEl.value) {
+    toast("Semua field harus diisi!", "error");
+    return;
+  }
+  if (!photoInput.files[0]) {
+    toast("Foto belum dipilih!", "error");
+    return;
+  }
+
+  uploadInProgress = true;
+  loadingOverlay.style.display = "flex";
+
+  try {
+    // === Buat nama file custom ===
+    const timestamp = getTimestamp();
+    const fileNameClean = [
+      sanitize(picEl.value.trim()),
+      sanitize(namaPartEl.value.trim()),
+      sanitize(areaEl.value.trim()),
+      timestamp
+    ].join("_");
+
+    const filename = `reports/${fileNameClean}.jpg`;
+
+    // === Upload file ===
+    const file = photoInput.files[0];
+    const { data, error: uploadErr } =
+      await supabaseClient.storage.from("Photos").upload(filename, file, {
+        contentType: file.type
+      });
+
+    if (uploadErr) throw new Error(uploadErr.message);
+
+    const { data: urlData } =
+      supabaseClient.storage.from("Photos").getPublicUrl(filename);
+
+    const fotoUrl = urlData.publicUrl;
+
+    // === Insert ke database ===
+    const { error: dbErr } = await supabaseClient.from("reports").insert({
+      namaDept: namaDeptEl.value.trim(),
+      nama_part: namaPartEl.value.trim(),
+      mesin: mesinEl.value.trim(),
+      area: areaEl.value.trim(),
+      pic: picEl.value.trim(),
+      foto_url: fotoUrl,
+      created_at: timestamp
+    });
+
+    if (dbErr) throw new Error(dbErr.message);
+
+    toast("Upload berhasil!", "success");
+    localStorage.removeItem(draftKey);
+
+    // === Tampilkan modal ===
+    document.getElementById("dDept").textContent = namaDeptEl.value;
+    document.getElementById("dMesin").textContent = mesinEl.value;
+    document.getElementById("dPart").textContent = namaPartEl.value;
+    document.getElementById("dArea").textContent = areaEl.value;
+    document.getElementById("dPic").textContent = picEl.value;
+    document.getElementById("dTime").textContent = timestamp;
+    document.getElementById("dFoto").src = fotoUrl;
+
+    document.getElementById("downloadModal").style.display = "flex";
+
+   document.getElementById("btnDownloadImg").addEventListener("click", () => {
+  const box = document.getElementById("downloadPreview");
+
+  html2canvas(box, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true
+  }).then(canvas => {
+    const a = document.createElement("a");
+    a.download = `${fileNameClean}.png`;
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+    actionCompleted = true;
+
+  });
+});
+
+
+    document.getElementById("btnCloseModal").addEventListener("click", () => {
+      document.getElementById("downloadModal").style.display = "none";
+      location.reload();
+    });
+
+  } catch (e) {
+    toast("Gagal upload: " + e.message, "error");
+  }
+});
+
+
+// SHARE VIA WHATSAPP
+document.getElementById("btnShareImg").addEventListener("click", () => {
+  const fotoUrl = document.getElementById("dFoto").src;    // ambil URL foto yang ditampilkan
+  const timestamp = new Date().toLocaleString();
+
+  const textMessage =
+    `📌 ***Laporan Penggantian Sparepart***\n\n` +
+    `********************************************\n` +
+    `• Dept: ${namaDeptEl.value}\n` +
+    `• Mesin: ${mesinEl.value}\n` +
+    `• Part: ${namaPartEl.value}\n` +
+    `• Area: ${areaEl.value}\n` +
+    `• PIC: ${picEl.value}\n` +
+    `• Timestamp: ${timestamp}\n\n` +
+    `📸 *Foto Sparepart:*\n${fotoUrl}\n\n` +
+    `Klik link foto di atas untuk melihat gambar.`;
+
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(textMessage)}`;
+  window.open(waUrl, "_blank");
+
+  actionCompleted = true;
+});
+
+
+document.getElementById("downloadModal").addEventListener("click", (e) => {
+  const modalBox = document.querySelector("#downloadModal > div");
+
+  // Jika klik di luar modal box
+  if (!modalBox.contains(e.target)) {
+    if (actionCompleted) {
+      document.getElementById("downloadModal").style.display = "none";
+      location.reload();
+    } else {
+      toast("Silakan download atau share terlebih dahulu!", "error");
+    }
+  }
+});
+
+
+
+// Ambil user dari supabase tabel users
+async function loadUser() {
+  const userRaw = localStorage.getItem("user");
+  if (!userRaw) {
+    location.href = "loginUser.html";
+    return;
+  }
+   //currentUserEmail = user.email;
+
+  const user = JSON.parse(userRaw);
+//  const UID = user.id
+
+  try {
+const { data, error } = await supabaseClient
+  .from("users")
+  .select("*")
+  .eq("auth_id", UID)
+  .single();
+
+if (error) throw error;
+
+if (!data) {
+  toast("User tidak ditemukan, login ulang", "error");
+  localStorage.removeItem("user");
+  location.href = "loginUser.html";
+  return;
+}
+
+
+document.getElementById("username").textContent = data.username || "—";
+document.getElementById("email").textContent = data.email || "—";
+
+  } catch (e) {
+    //toast("Gagal load user: " + e.message, "error");
+  }
+}
+
+
+
+  /* ======================
+     LOGOUT
+  ====================== */
+  function logout(){
+    try { localStorage.removeItem("user"); } catch(e){}
+    if (supabaseClient && supabaseClient.auth) supabaseClient.auth.signOut().catch(()=>{});
+    window.location.href = "index.html";
+  }
+loadUser();
+loadUserData();
+// Panggil saat halaman siap
+//loadUserDataAndHistory();
+
+
+
+</script>
+</body>
+</html>

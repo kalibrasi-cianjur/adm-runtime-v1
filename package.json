@@ -1,0 +1,67 @@
+{
+  "name": "adm-runtime",
+  "productName": "adm-runtime",
+  "version": "1.0.0",
+  "description": "Adm Runtime ERP System",
+  "author": "kiel",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win nsis",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "@electron/remote": "^2.1.3",
+    "@supabase/supabase-js": "^2.86.2",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^8.7.0",
+    "dotenv": "^17.2.3",
+    "electron-log": "^5.1.2",
+    "electron-updater": "^6.1.7",
+    "firebase-admin": "^13.6.0",
+    "nodemailer": "^7.0.12",
+    "pdf-lib": "^1.17.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.QL.erp",
+    "productName": "adm-runtime",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/electron-builder/**",
+      "!database/**",
+      "!logs/**"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "kalibrasi-cianjur",
+        "repo": "adm-runtime"
+      }
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true,
+      "perMachine": true,
+      "shortcutName": "adm-runtime",
+      "deleteAppDataOnUninstall": false,
+      "differentialPackage": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    }
+  }
+}

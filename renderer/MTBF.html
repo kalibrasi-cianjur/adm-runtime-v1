@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        img-src 'self' data: blob: https://hlleyvltrlopiagyrvbr.supabase.co;
+        script-src 'self';
+        style-src 'self' 'unsafe-inline';
+      ">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>MTBF Manager</title>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background:#071029;
+      color:#e6eef6;
+      padding:16px;
+    }
+
+    h2 { margin-bottom: 16px; }
+
+    .card {
+      background:#0b1220;
+      padding:14px;
+      border-radius:12px;
+      margin-bottom:14px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 4px 12px rgba(0,0,0,.35);
+    }
+
+    .grid2 {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    input, button {
+      padding:10px 12px;
+      border-radius:10px;
+      border:0;
+      background:#071429;
+      color:#fff;
+    }
+
+    input::placeholder { color: #5f6f87; }
+
+    .ghost {
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    table {
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+    }
+    .table-wrapper {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+/* Sticky header biar high-tech 😎 */
+.table-wrapper thead th {
+  position: sticky;
+  top: 0;
+  background: #0b1220;
+  z-index: 2;
+}
+
+
+    thead {
+      background: rgba(255,255,255,.03);
+    }
+
+    td, th {
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,0.05);
+      font-size:13px;
+      text-align:left;
+    }
+
+
+    .label {
+      display:block;
+      font-size:11px;
+      opacity:.6;
+      margin-bottom:4px;
+    }
+
+    .machine-item {
+      padding:10px;
+      border-radius:10px;
+      margin-bottom:8px;
+      cursor:pointer;
+      border: 1px solid rgba(255,255,255,.05);
+    }
+
+    .machine-item strong {
+      font-size:14px;
+      display:block;
+    }
+
+    .machine-item span {
+      font-size:11px;
+      opacity: .7;
+    }
+
+    .machine-item.good{ background:rgba(4,120,87,0.08) }
+    .machine-item.warn{ background:rgba(250,204,21,0.05) }
+    .machine-item.bad{ background:rgba(220,38,38,0.05) }
+
+    .uppercase-input { text-transform: uppercase; }
+
+    #cloudScanList .card {
+      background: rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.04);
+    }
+
+    .cloud-item {
+      margin-bottom: 10px;
+    }
+    .queue-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.queue-list::-webkit-scrollbar {
+  width: 6px;
+}
+.queue-list::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 6px;
+}
+
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* === COLUMN === */
+.col-left,
+.col-center,
+.col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.col-left {
+  max-height: 100vh;
+  overflow: auto;
+}
+.col-left .qv-card{
+  margin-bottom:10px;
+}
+
+.col-left .card h3{
+  margin-bottom:10px;
+}
+
+.col-left .card:last-child{
+  margin-bottom:0;
+}
+
+
+.col-center {
+  flex: 1;
+}
+
+.col-right {
+  width: 300px;
+}
+
+/* make workbench more compact */
+.workbench{
+  grid-template-columns:repeat(4,1fr);
+}
+
+.workbench .field{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+
+.workbench input {
+  padding: 3px;
+  font-size: 10px;
+}
+
+
+.btn-row{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+
+/* Stat Cards */
+.grid-cards{
+  display:grid;
+  grid-template-columns: repeat(5,1fr);
+  gap:12px;
+}
+
+.stat-card{
+  background:#0b1220;
+  border-radius:12px;
+  padding:14px;
+  text-align:center;
+  box-shadow:0 4px 20px rgba(0,0,0,.4)
+}
+
+.stat-card h4{
+  margin:0 0 6px;
+  font-size:13px;
+  opacity:.7
+}
+
+.stat-card span{
+  font-size:26px;
+  font-weight:bold;
+}
+
+.stat-card.good{ border-bottom:3px solid #16a34a }
+.stat-card.warn{ border-bottom:3px solid #facc15 }
+.stat-card.bad { border-bottom:3px solid #dc2626 }
+
+/* MTBF BAR */
+.mtbf-bar {
+  margin-top:4px;
+  height:6px;
+  background:#1e293b;
+  border-radius:6px;
+}
+
+.mtbf-bar span{
+  display:block;
+  height:100%;
+  border-radius:6px;
+}
+
+.mtbf-bar.good span{ background:#16a34a }
+.mtbf-bar.warn span{ background:#facc15 }
+.mtbf-bar.bad span{ background:#dc2626 }
+
+/* ================= MODERN QUICK VIEW ================= */
+
+.quick-list{
+  max-height:420px;
+  overflow-y:auto;
+  padding-right:6px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* Modern Card */
+.machine-item{
+  position:relative;
+  padding:12px 14px;
+  border-radius:16px;
+  cursor:pointer;
+  background:linear-gradient(145deg,#0e172a,#0a1220);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.04),
+    0 8px 20px rgba(0,0,0,.45);
+  transition:all .25s ease;
+  overflow:hidden;
+}
+
+/* Accent strip kiri */
+.machine-item::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  width:5px;
+  height:100%;
+  background:#64748b;
+  opacity:.9;
+}
+
+/* Hover effect */
+.machine-item:hover{
+  transform:translateY(-3px) scale(1.01);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.08),
+    0 12px 26px rgba(0,0,0,.6);
+}
+
+/* Text layout */
+.machine-item strong{
+  font-size:14px;
+  font-weight:600;
+  display:block;
+  margin-bottom:2px;
+}
+
+.machine-item .qv-sub{
+  font-size:11px;
+  opacity:.7;
+}
+
+.machine-item .qv-mtbf{
+  margin-top:6px;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.3px;
+}
+
+/* STATUS COLOR */
+.machine-item.good::before{ background:#22c55e; }
+.machine-item.warn::before{ background:#facc15; }
+.machine-item.bad::before { background:#ef4444; }
+
+/* Scrollbar cantik */
+.quick-list::-webkit-scrollbar{
+  width:6px;
+}
+.quick-list::-webkit-scrollbar-thumb{
+  background:#1e3a8a;
+  border-radius:6px;
+}
+
+
+.machine-item:hover{ transform: scale(1.02); }
+
+/* Queue */
+.queue-info{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+.form-stack{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field{
+  display: flex;
+  flex-direction: column;
+}
+
+.field label{
+  font-size: 12px;
+  opacity: .75;
+  margin-bottom: 3px;
+}
+
+
+
+.grid2{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.btn-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-primary{
+  background: linear-gradient(135deg,#0284c7,#0ea5e9);
+  font-weight: 600;
+}
+
+.btn-outline{
+  background: transparent;
+  border: 1px solid #1e3a8a;
+}
+
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: auto;
+  z-index: 99999 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+/* === TOAST BOX === */
+#toastContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  position: relative;
+  min-width: 220px;
+  background: #1f1f1f !important;
+  color: #fff !important;
+  padding: 12px 18px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.25);
+  pointer-events: auto;
+  overflow: hidden;
+  border-left: 5px solid #ccc !important;
+}
+
+/* Warna per tipe */
+.toast.success { border-left-color: #4caf50 !important; }
+.toast.error   { border-left-color: #ff4d4d !important; }
+.toast.info    { border-left-color: #2196f3 !important; }
+
+/* Progress Bar */
+.toast .bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background: rgba(255,255,255,0.15);
+}
+
+.toast .bar .fill {
+  height: 100%;
+  width: 100%;
+  background: currentColor;
+  transition: width linear;
+}
+
+
+/* ===== NEW ROW HIGHLIGHT ===== */
+tr.new-row {
+  animation: flashRow 1.2s ease-in-out;
+  background: rgba(56,189,248,0.2);
+}
+
+@keyframes flashRow {
+  0%   { background: rgba(56,189,248,0.6); }
+  100% { background: rgba(0,0,0,0); }
+}
+
+.row-new {
+  animation: flash 2s ease;
+  background: #00ff9955 !important;
+}
+
+@keyframes flash {
+  0%   { background: #00ff99aa; }
+  100% { background: transparent; }
+}
+
+.data-table table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.data-table thead{
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+.qv-card{
+  border-radius:18px;
+  padding:14px 16px;
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  transition:.2s;
+}
+
+.qv-card::after{
+  content:"";
+  position:absolute;
+  right:-40px;
+  top:-40px;
+  width:120px;
+  height:120px;
+  background:rgba(255,255,255,.08);
+  transform:rotate(25deg);
+}
+
+.qv-label{
+  font-size:12px;
+  opacity:.7;
+}
+
+.qv-value{
+  font-size:34px;
+  font-weight:700;
+  line-height:1;
+}
+
+.qv-sub{
+  font-size:11px;
+  opacity:.6;
+}
+
+.qv-card:hover{
+  transform:translateY(-3px) scale(1.01);
+}
+
+/* STATUS WARNA (TANPA GANTI TEMA UTAMA) */
+.qv-card.good    { box-shadow:inset 0 -4px 0 #22c55e }
+.qv-card.bad     { box-shadow:inset 0 -4px 0 #ef4444 }
+.qv-card.warn    { box-shadow:inset 0 -4px 0 #facc15 }
+.qv-card.info    { box-shadow:inset 0 -4px 0 #38bdf8 }
+.qv-card.neutral { box-shadow:inset 0 -4px 0 #94a3b8 }
+
+
+/* ================= BADGE SYSTEM ================= */
+
+/* Base Badge */
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.3px;
+  line-height:1;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.05);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.03),
+    0 3px 10px rgba(0,0,0,.35);
+  transition:.2s ease;
+}
+
+/* Icon kecil opsional di dalam badge */
+.badge i{
+  font-size:10px;
+  opacity:.9;
+}
+
+/* ===== STATUS WARNA ===== */
+
+.badge.good{
+  background: linear-gradient(135deg,#064e3b,#16a34a);
+  color:#a7f3d0;
+  border-color:#16a34a55;
+  box-shadow: inset 0 -2px 0 #22c55e;
+}
+
+.badge.warn{
+  background: linear-gradient(135deg,#78350f,#facc15);
+  color:#fff3c4;
+  border-color:#facc1555;
+  box-shadow: inset 0 -2px 0 #facc15;
+}
+
+.badge.bad{
+  background: linear-gradient(135deg,#450a0a,#dc2626);
+  color:#fecaca;
+  border-color:#dc262655;
+  box-shadow: inset 0 -2px 0 #ef4444;
+}
+
+.badge.info{
+  background: linear-gradient(135deg,#082f49,#38bdf8);
+  color:#dbeafe;
+  border-color:#38bdf855;
+  box-shadow: inset 0 -2px 0 #38bdf8;
+}
+
+.badge.neutral{
+  background: linear-gradient(135deg,#0f172a,#334155);
+  color:#e5e7eb;
+  border-color:#64748b55;
+  box-shadow: inset 0 -2px 0 #64748b;
+}
+
+/* ===== NETWORK BADGE ===== */
+
+.badge.online{
+  background: linear-gradient(135deg,#064e3b,#22c55e);
+  color:#bbf7d0;
+}
+
+.badge.offline{
+  background: linear-gradient(135deg,#450a0a,#ef4444);
+  color:#fecaca;
+}
+
+/* ===== SYNC / LOADING BADGE ===== */
+
+.badge.sync{
+  background: linear-gradient(135deg,#1e3a8a,#38bdf8);
+  color:#e0f2fe;
+  position:relative;
+  overflow:hidden;
+}
+
+.badge.sync::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,.35),
+    transparent
+  );
+  animation: badgeShine 1.2s linear infinite;
+}
+
+@keyframes badgeShine{
+  from { transform:translateX(-100%); }
+  to   { transform:translateX(100%); }
+}
+
+/* ===== SIZE VARIANTS ===== */
+
+.badge.sm{
+  font-size:10px;
+  padding:3px 8px;
+}
+
+.badge.lg{
+  font-size:13px;
+  padding:6px 14px;
+}
+
+/* Hover efek halus */
+.badge:hover{
+  filter:brightness(1.1);
+  transform:translateY(-1px);
+}
+
+
+
+  </style>
+</head>
+<body>
+
+ <div class="layout">
+
+  <!-- ================= LEFT : QUICK VIEW ================= -->
+ <div class="col-left">
+  <!-- QUICK VIEW LIST -->
+
+
+  <!-- QUICK VIEW STATS (BARU: DI BAWAH QUICK VIEW) -->
+  <div class="card">
+    <h3>📌 Reporting</h3>
+
+    <div class="qv-card good">
+      <div class="qv-label">GOOD MTBF</div>
+      <div class="qv-value" id="sumGood">0</div>
+      <div class="qv-sub">Total Status Part Pada Mesin Kondisi Good</div>
+    </div>
+
+    <div class="qv-card bad">
+      <div class="qv-label">CRITICAL MTBF</div>
+      <div class="qv-value" id="sumBad">0</div>
+      <div class="qv-sub">Total Status Part Pada Mesin Kondisi Critical</div>
+    </div>
+
+    <div class="qv-card warn">
+      <div class="qv-label">WARNING MTBF</div>
+      <div class="qv-value" id="sumWarn">0</div>
+      <div class="qv-sub">Total Status Part Pada Mesin Kondisi Warning</div>
+    </div>
+
+    <div class="qv-card info">
+      <div class="qv-label">Average MTBF</div>
+      <div class="qv-value" id="avgMtbf">0</div>
+      <div class="qv-sub">Average MTBF Mesin All Line</div>
+    </div>
+
+    <div class="qv-card neutral">
+      <div class="qv-label">Total Mesin</div>
+      <div class="qv-value" id="sumTotal">0</div>
+      <div class="qv-sub">Total Pengantian Part Mesin All Line </div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- ================= CENTER : CLOUD + TABLE ================= -->
+  <div class="col-center">
+
+    <!-- CLOUD QUEUE -->
+    <div class="card">
+      <h3>☁ Cloud Queue</h3>
+
+      <div class="queue-info">
+        <span id="scanNetInfo" class="badge bad">OFFLINE</span>
+        <span id="scanLoader" class="badge hidden">SYNC...</span>
+      </div>
+
+      <div id="cloudScanList" class="queue-list"></div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card">
+  <h3>📊 MTBF Machine Table</h3>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Mesin</th>
+          <th>Part</th>
+          <th>Area</th>
+          <th>Jam</th>
+          <th>PIC</th>
+          <th>Dept</th>
+          <th>Foto</th>
+          <th>Fail</th>
+          <th>MTBF</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="mtbfTable"></tbody>
+    </table>
+  </div>
+</div>
+
+
+    <!-- EXPORT / IMPORT -->
+    <div class="card">
+      <button id="btnExport" class="ghost">⬇ Export</button>
+      <button id="btnImport" class="ghost">⬆ Import</button>
+      <input type="file" id="importFile" hidden />
+    </div>
+
+  </div>
+
+
+
+  <!-- ================= RIGHT : WORKBENCH ================= -->
+  <div class="col-right">
+
+    <div class="card workbench">
+
+      <form id="mtbfForm" class="form-stack">
+
+        <div class="field">
+          <label>Nama Mesin</label>
+          <input id="mesin" placeholder="CRUSHER 01" class="uppercase-input"/>
+        </div>
+
+        <div class="field">
+          <label>Part / Komponen</label>
+          <input id="part" placeholder="BEARING / MOTOR" class="uppercase-input"/>
+        </div>
+
+        <div class="field">
+          <label>Area / Lokasi</label>
+          <input id="area" placeholder="LINE A" class="uppercase-input"/>
+        </div>
+
+        <div class="grid2">
+
+          <div class="field">
+            <label>Jam</label>
+            <input id="operasi" type="number" placeholder="1000"/>
+          </div>
+
+          <div class="field">
+            <label>Fail</label>
+            <input id="failure" type="number" placeholder="2"/>
+          </div>
+
+        </div>
+
+        <div class="grid2">
+
+          <div class="field">
+            <label>Min Warn</label>
+            <input id="minWarn" type="number" value="200"/>
+          </div>
+
+          <div class="field">
+            <label>Min Good</label>
+            <input id="minGood" type="number" value="500"/>
+          </div>
+
+        </div>
+
+        <div class="btn-row">
+          <button type="submit" class="btn-primary">💾 Simpan</button>
+          <button type="button" id="btnReset" class="btn-outline">♻ Reset</button>
+        </div>
+
+      </form>
+
+    </div>
+    <div class="card">
+    <h3>⚙ Quick View</h3>
+    <div id="machineList" class="quick-list"></div>
+  </div>
+  </div>
+
+</div>
+
+
+
+  <script src="./renderer_mtbf_cloud.js"></script>
+  <script src="./renderer_mtbf.js"></script>
+  <script src="../js/toast.js"></script>
+</body>
+
+
+</html>

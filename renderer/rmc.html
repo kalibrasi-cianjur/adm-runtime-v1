@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>RMC Manager</title>
+ <link rel="stylesheet" href="style.css">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"/>
+</head>
+<style>
+
+  #floatingSummary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+  }
+
+  @media (max-width: 768px) {
+    #floatingSummary {
+      flex-direction: column;
+      align-items: flex-end;
+      padding: 10px 16px;
+      font-size: 13px;
+      gap: 8px;
+      right: 10px;
+    }
+
+
+</style>
+<body>
+<div id="global-loading" class="loading-hidden">
+  <div class="loader"></div>
+  <p>Loading screen...</p>
+</div>
+
+<div class="layout" style="
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  padding: 10px 20px;
+">
+
+  <!-- SIDEBAR -->
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <div id="currentRMC" style="
+      background: linear-gradient(135deg, #0078ff, #00c6ff);
+      color: white;
+      border-radius: 12px;
+      padding: 20px 14px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+    ">
+      <div style="font-size: 14px;">RMC Tahun <span id="rmcYear">2025</span></div>
+      <div>Rp <span id="rmcValue">0</span></div>
+    </div>
+    <!-- SUMMARY BOXES -->
+<div id="rmcSummary" style="
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+">
+
+    <!-- Form ini akan disembunyikan jika nominal RMC sudah ada -->
+    <div class="left-panel" id="rmcFormContainer"
+         style="background: var(--panel); border-radius: 10px; padding: 14px;">
+      <h3>Input Nominal RMC</h3>
+      <form id="rmcForm" style="display: flex; flex-direction: column; gap: 10px;">
+        <input type="number" id="rmc_nominal" placeholder="Nominal..." required
+               style="padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+        <button type="submit"
+                style="background: var(--accent); color: #fff; padding: 8px; border-radius: 6px;">
+          Simpan
+        </button>
+      </form>
+    </div>
+  <!-- PR Factory -->
+  <div class="summary-card" id="sumPRFactory">
+    <div class="label">Purchase Requisition Factory</div>
+    <div class="value">Rp <span id="prFactoryValue">0</span></div>
+  </div>
+
+  <!-- PR Pusat -->
+  <div class="summary-card" id="sumPRPusat">
+    <div class="label">Purchase Requisition Pusat</div>
+    <div class="value">Rp <span id="prPusatValue">0</span></div>
+  </div>
+
+  <!-- Outstanding -->
+  <div class="summary-card" id="sumOutstanding">
+    <div class="label">Outstanding Purchase Order</div>
+    <div class="value">Rp <span id="outstandingValue">0</span></div>
+  </div>
+
+  <!-- PO Factory -->
+  <div class="summary-card" id="sumPOFactory">
+    <div class="label">Purchase Order Factory</div>
+    <div class="value">Rp <span id="poFactoryValue">0</span></div>
+  </div>
+
+  <!-- PO Pusat -->
+  <div class="summary-card" id="sumPOPusat">
+    <div class="label">Purchase Order Pusat</div>
+    <div class="value">Rp <span id="poPusatValue">0</span></div>
+  </div>
+
+  <!-- Sisa -->
+  <div class="summary-card" id="sumSisa">
+    <div class="label">Sisa RMC</div>
+    <div class="value">Rp <span id="sisaValue">0</span></div>
+  </div>
+
+</div>
+
+<div id="importModal" class="modal hidden">
+  <div class="modal-wrapper">
+    <div class="modal-header">
+      <span class="modal-title">📥 Import File PR</span>
+      <button class="modal-close-btn" id="closeImportModal">✕</button>
+
+    </div>
+    <div class="table-container">
+      <table id="excelPreviewTable">
+        <colgroup>
+          <col style="width:10%"/>  <!-- A: tanggal -->
+          <col style="width:10%"/>  <!-- B: kode -->
+          <col style="width:30%"/>  <!-- C: item -->
+          <col style="width:10%"/>  <!-- D: no pr -->
+          <col style="width:10%"/>  <!-- E: no doc -->
+          <col style="width:6%"/>   <!-- F: qty -->
+          <col style="width:6%"/>   <!-- G: satuan -->
+          <col style="width:8%"/>   <!-- H: harga -->
+          <col style="width:10%"/>  <!-- I: total -->
+          <col style="width:10%"/>  <!-- I: total -->
+          <col style="width:10%"/>  <!-- I: total -->
+
+          <!-- sesuaikan lebar sesuai kebutuhan; total harus 100% -->
+        </colgroup>
+        <thead>
+          <tr id="previewHeaderRow"><!-- diisi oleh JS --></tr>
+        </thead>
+        <tbody id="previewBodyRows"><!-- diisi oleh JS --></tbody>
+      </table>
+    </div>
+
+    <div class="modal-actions">
+      <button id="btnProcessPR" class="btn-primary">Cek Kecocokan Database</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Modal Background */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 800;
+  }
+
+  .hidden { display: none; }
+
+  /* Modal Box */
+  .modal-wrapper {
+    width: 85%;
+    max-width: 1500px;
+    background: #162131;
+    border-radius: 18px;
+    padding: 20px 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    color: #fff;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+
+  /* Header */
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+  }
+
+  .modal-title {
+    font-size: 22px;
+    font-weight: 500;
+  }
+
+  .modal-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: #fff;
+    cursor: pointer;
+    padding: 5px 10px;
+  }
+
+  /* Table Header */
+  .table-header-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 5px;
+  }
+
+  .table-header-container th {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 10px;
+    text-align: left;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    white-space: nowrap;
+  }
+
+  /* Table Body */
+  .table-body-container {
+    flex: 1;
+    overflow-y: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .table-body-container table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table-body-container td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    font-size: 13px;
+  }
+
+  /* Alternating row colors */
+  .table-body-container tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+  }
+
+  /* Buttons */
+  .modal-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .btn-primary {
+    background: #3a82ff;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #fff;
+    font-weight: 600;
+    transition: 0.2s;
+  }
+
+  .btn-primary:hover {
+    background: #1b6dff;
+  }
+
+  .btn-secondary {
+    background: #555;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #fff;
+    font-weight: 500;
+    transition: 0.2s;
+  }
+
+  .btn-secondary:hover {
+    background: #444;
+  }
+
+  .table-container {
+  flex: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  margin-top: 10px;
+}
+
+/* Biarkan body scrollable, header sticky */
+.table-container {
+  max-height: 56vh;
+  overflow: auto;
+}
+
+/* Table layout fixed => kolom sejajar */
+#excelPreviewTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* penting */
+  color: #fff;
+  font-size: 13px;
+}
+
+/* Sticky header */
+#excelPreviewTable thead th {
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(4px);
+  z-index: 2;
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Body cells */
+#excelPreviewTable tbody td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: top;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Alternating rows */
+#excelPreviewTable tbody tr:nth-child(even) {
+  background: rgba(255,255,255,0.02);
+}
+.diff-cell {
+  background: #ffb3b3 !important;
+  font-weight: bold;
+}
+#toast {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  padding: 12px 18px;
+  background: #1e293b;
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  z-index: 9999;  /* ⬅ toast di atas modal */
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.25s ease;
+}
+
+
+</style>
+
+<div id="progressContainer" style="margin-top: 20px;">
+  <div style="font-weight: 600; margin-bottom: 6px;">Persentase Pemakaian RMC (PO)</div>
+  <div style="
+    background: #e0e0e0;
+    border-radius: 10px;
+    height: 22px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  ">
+    <div id="progressBar" style="
+      height: 100%;
+      width: 0%;       background: linear-gradient(90deg, #00b09b, #96c93d);
+      transition: width 0.6s ease-in-out;
+    "></div>
+  </div>
+  <div id="progressLabel" style="text-align: right; font-weight: 600; margin-top: 4px; color: #0078ff;">
+    0%
+  </div>
+</div>
+  </div>
+
+<!-- 🔹 PANEL KANAN MODERN -->
+<div class="right-panel rmc-table-container" style="
+
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+">
+
+  <!-- Header atas tabel -->
+  <div class="table-header" style="
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    position: relative;
+
+  ">
+    <h3 style="margin: 0; color: var(--accent); font-weight: 700; font-size: 18px;">
+      📦 History Penggunaan RMC
+    </h3>
+
+
+ <div style="position: relative;">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="🔍 Cari data..."
+      style="
+        padding: 8px 32px 8px 12px;
+        width: 220px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 13px;
+        transition: all 0.25s ease;
+      "
+    />
+    <span id="searchLoading"></span>
+  </div>
+</div>
+
+  <!-- Kontainer tabel -->
+ <div class="table-wrapper" style="
+  flex: 1;
+  overflow-y: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+">
+
+    <table id="historyRMC" class="styled-table">
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>No. Material</th>
+          <th>Nama Part</th>
+          <th>Vendor</th>
+          <th style="text-align:right;">Qty</th>
+          <th style="text-align:right;">Harga</th>
+          <th style="text-align:right;">Total</th>
+          <th>Nomor PR</th>
+          <th>Nomor PO</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+
+<!-- AI SUMMARY CARD -->
+<div id="aiSummaryCard" class="ai-summary-card hidden">
+  <div class="ai-header">
+    <h3>📘 Kesimpulan</h3>
+    <div class="ai-actions">
+      <button id="btnExportCsv" class="ai-btn">Export CSV</button>
+      <button id="btnExportPdf" class="ai-btn">Export PDF</button>
+      <button id="btnToggleDetails" class="ai-btn">Lihat Detail</button>
+    </div>
+  </div>
+
+  <div id="aiSummaryMain" class="ai-main">
+    <div id="aiSummaryText">Memproses data...</div>
+
+    <div class="ai-metrics">
+      <div class="metric">
+        <div class="metric-title">Total Transaksi</div>
+        <div id="mTotal" class="metric-value">0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-title">Total Nilai</div>
+        <div id="mValue" class="metric-value">Rp 0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-title">Tanpa PR</div>
+        <div id="mNoPR" class="metric-value">0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-title">Tanpa PO</div>
+        <div id="mNoPO" class="metric-value">0</div>
+      </div>
+        <div class="metric">
+        <div class="metric-title">Tanpa Data</div>
+        <div id="mNoDat" class="metric-value">0</div>
+      </div>
+    </div>
+
+    <div class="ai-charts">
+      <div class="ai-chart-card">
+        <div class="ai-chart-title">Top Vendor</div>
+        <canvas id="aiChartVendor" height="80"></canvas>
+      </div>
+      <div class="ai-chart-card">
+        <div class="ai-chart-title">Top Item</div>
+        <canvas id="aiChartItem" height="80"></canvas>
+      </div>
+      <div class="ai-chart-card">
+        <div class="ai-chart-title">Top Lokasi</div>
+        <canvas id="aiChartLokasi" height="80"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail (tabel + rekomendasi) -->
+  <div id="aiDetail" class="ai-detail hidden">
+    <h4>🔎 Rekomendasi & Item Prioritas</h4>
+    <div id="aiRecommendations"></div>
+
+    <h4>📋 Data Ringkas (Top 50)</h4>
+    <div style="max-height:320px; overflow:auto;">
+      <table id="aiDetailTable" class="ai-table">
+        <thead>
+          <tr>
+            <th>Tanggal</th><th>No.Material</th><th>Item</th><th>Qty</th><th>Total</th><th>PR</th><th>Vendor</th><th>Lokasi</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+<!-- Overlay Loading -->
+<div id="loadingOverlay" class="hidden">
+  <div class="loading-spinner"></div>
+  <span>Memproses data...</span>
+</div>
+
+<!-- 🔹 Floating Summary Modern -->
+<div id="floatingSummary" style="
+  position: fixed;
+  bottom: 20px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(200, 200, 200, 0.4);
+  border-radius: 14px;
+  padding: 12px 22px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  font-weight: 600;
+  font-size: 14px;
+  color: #222;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  z-index: 999;
+  transition: all 0.25s ease;
+">
+  <div style="display:flex;align-items:center;gap:6px;">
+    <span style="color:#007bff;">📋</span>
+    <span>Total PR:</span>
+    <span id="countPR" style="color:#007bff;">0</span>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:6px;">
+    <span style="color:#28a745;">🧾</span>
+    <span>Total PO:</span>
+    <span id="countPO" style="color:#28a745;">0</span>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:6px;">
+    <span style="color:#ff9800;">⚙️</span>
+    <span>Total Sertim:</span>
+    <span id="countSertim" style="color:#ff9800;">0</span>
+  </div>
+<!-- 🔹 Tombol Chart & Export -->
+  <button id="btnChart" style="
+    background:#007bff; color:white; border:none; padding:6px 14px;
+    border-radius:8px; cursor:pointer; font-weight:600;
+    transition:0.2s; font-size:13px;
+  ">📊 Chart</button>
+
+  <button id="btnExport" style="
+    background:#28a745; color:white; border:none; padding:6px 14px;
+    border-radius:8px; cursor:pointer; font-weight:600;
+    transition:0.2s; font-size:13px;
+  ">📤 Export</button>
+</div>
+
+<!-- 🔹 Modal Chart -->
+<div id="chartModal" class="modal hidden">
+  <div class="modal-content dashboard-modal">
+    <h3 id="chartTitle">Pilih Chart</h3>
+
+    <!-- Tombol Pilih Chart -->
+    <div id="chartButtons" class="chart-buttons">
+      <button class="modal-btn" data-type="SERTIM">Sertim</button>
+      <button class="modal-btn" data-type="PR_FACTORY">PR Factory</button>
+      <button class="modal-btn" data-type="PR_PUSAT">PR Pusat</button>
+      <button class="modal-btn" data-type="PO_FACTORY">PO Factory</button>
+      <button class="modal-btn" data-type="PO_PUSAT">PO Pusat</button>
+      <button class="modal-btn" data-type="OUTSTANDING">Outstanding</button>
+    </div>
+
+    <!-- Canvas Chart -->
+    <div class="chart-container">
+      <canvas id="rmcChart"></canvas>
+    </div>
+
+    <!-- Tombol Tutup -->
+    <div class="modal-footer">
+      <button class="modal-save" id="saveChartBtn">Simpan Chart</button>
+      <button class="modal-close" id="closeChartBtn">Tutup</button>
+    </div>
+  </div>
+
+  </div>
+
+<style>
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Modal utama */
+.modal-content.dashboard-modal {
+  background-color: #2a2a72; /* custom background */
+  color: #fff; /* semua tulisan putih */
+  padding: 20px;
+  border-radius: 12px;
+  width: 1000px;
+  max-width: 90%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Header */
+.modal-content h3 {
+  margin-top: 0;
+  font-size: 1.3rem;
+  color: #fff;
+}
+
+/* Tombol chart */
+.chart-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.chart-buttons .modal-btn {
+  flex: 1 1 30%;
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: 0.2s;
+}
+.chart-buttons .modal-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Chart container */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  margin-bottom: 12px;
+}
+.chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+}
+
+/* Footer */
+.modal-footer {
+  text-align: right;
+}
+.modal-footer .modal-close,
+.modal-footer .modal-save {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+  color: #fff;
+}
+.modal-footer .modal-close {
+  background-color: #007bff;
+}
+.modal-footer .modal-close:hover {
+  background-color: #0056b3;
+}
+.modal-footer .modal-save {
+  background-color: #28a745;
+  margin-left: 8px;
+}
+.modal-footer .modal-save:hover {
+  background-color: #218838;
+}
+</style>
+<!-- 🔹 Modal Export -->
+<div id="exportModal" class="modal hidden">
+  <div class="modal-content">
+    <h3 class="modal-title">📊 Export Data RMC</h3>
+
+<div class="form-group">
+      <label for="exportMonth">Pilih Bulan:</label>
+      <input type="month" id="exportMonth" />
+    </div>
+
+    <div class="form-group">
+      <label for="exportCategory">Pilih Kategori:</label>
+      <select id="exportCategory">
+        <option value="">-- Pilih Kategori --</option>
+        <option value="SERTIM">Sertim</option>
+        <option value="PR_FACTORY">PR Factory</option>
+        <option value="PR_PUSAT">PR Pusat</option>
+        <option value="PO_FACTORY">PO Factory</option>
+        <option value="PO_PUSAT">PO Pusat</option>
+        <option value="OUTSTANDING">Outstanding</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button id="confirmExport" class="modal-btn">✅ Export Sekarang</button>
+      <button id="closeExportModal" class="modal-close">❌ Tutup</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Overlay modal */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.7); /* Tidak transparan berlebihan */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.2s ease;
+  }
+
+  .modal.hidden {
+    display: none;
+  }
+
+  /* Konten modal */
+  .modal-content {
+    background: var(--card-bg, #1f2937); /* mengikuti tema dashboard gelap */
+    color: var(--text-color, #f3f4f6);
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    padding: 2rem;
+    width: 420px;
+    max-width: 90%;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .modal-content h3 {
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    text-align: center;
+    color: var(--accent-color, #60a5fa);
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  input[type="month"],
+  select {
+    background: #111827;
+    color: #f9fafb;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  input[type="month"]:focus,
+  select:focus {
+    outline: none;
+    border-color: var(--accent-color, #3b82f6);
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+  }
+
+  .modal-btn,
+  .modal-close {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .modal-btn {
+    background-color: var(--accent-color, #3b82f6);
+    color: white;
+  }
+
+  .modal-btn:hover {
+    background-color: var(--accent-hover, #2563eb);
+  }
+
+  .modal-close {
+    background-color: #4b5563;
+    color: white;
+  }
+
+  .modal-close:hover {
+    background-color: #6b7280;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+</style>
+
+
+<script src="../js/chart.umd.js"></script>
+<script src="../js/app.js"></script>
+<script src="renderer_rmc.js"></script>
+</body>
+</html>

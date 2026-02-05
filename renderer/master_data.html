@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+
+  <meta charset="UTF-8">
+   <meta http-equiv="Content-Security-Policy"
+
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
+
+  <title>Master Kode</title>
+<link rel="stylesheet" href="style.css">
+<style>
+/* ================= THEME VARIABLES ================= */
+:root {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-muted: #f1f5f9;
+
+  --text-main: #0f172a;
+  --text-muted: #475569;
+
+  --border-color: #e2e8f0;
+
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --danger: #ef4444;
+
+  --radius: 14px;
+}
+
+/* ================= DARK THEME ================= */
+body.dashboard-dark {
+  --bg-main: #0f172a;
+  --bg-card: #020617;
+  --bg-muted: #020617;
+
+  --text-main: #e5e7eb;
+  --text-muted: #94a3b8;
+
+  --border-color: #1e293b;
+
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --danger: #f87171;
+}
+
+/* ================= GLOBAL ================= */
+* {
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-main);
+  color: var(--text-main);
+  transition: background .25s ease, color .25s ease;
+}
+
+/* ================= CARD / PANEL ================= */
+.card,
+.modal-box {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+
+/* ================= TEXT ================= */
+h1, h2, h3, h4 {
+  color: var(--text-main);
+}
+
+small, .muted {
+  color: var(--text-muted);
+}
+
+/* ================= TABLE ================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-card);
+}
+
+thead {
+  background: var(--bg-muted);
+}
+
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+
+th {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+tbody tr:hover {
+  background: rgba(148,163,184,.12);
+}
+
+/* ================= INPUT ================= */
+input, select {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ================= BUTTON ================= */
+button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--primary-hover);
+}
+
+button.delete {
+  background: var(--danger);
+}
+
+/* ================= PAGINATION ================= */
+.pagination {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.pagination button {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+.pagination button.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+
+/* ================= MODAL OVERLAY ================= */
+#masterModal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+}
+
+body.dashboard-dark #masterModal {
+  background: rgba(2, 6, 23, 0.75);
+}
+
+#masterModal.show {
+  display: flex;
+}
+
+/* ================= MODAL BOX ================= */
+.modal-box {
+  width: 360px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-radius: 16px;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.15),
+    0 30px 60px rgba(0,0,0,.15);
+  overflow: hidden;
+  animation: modalFade .25s ease-out;
+}
+
+/* ================= ANIMATION ================= */
+@keyframes modalFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ================= HEADER ================= */
+.modal-header {
+  padding: 16px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-muted);
+}
+
+/* ================= BODY ================= */
+.modal-body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ================= INPUT ================= */
+.modal-body input,
+.modal-body select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.modal-body input:focus,
+.modal-body select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.25);
+}
+
+/* ================= FOOTER ================= */
+.modal-footer {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-muted);
+}
+
+/* ================= BUTTON ================= */
+.modal-footer button {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.modal-footer .cancel {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.modal-footer .cancel:hover {
+  background: rgba(148,163,184,.15);
+}
+
+.modal-footer .save {
+  background: var(--primary);
+  color: #fff;
+}
+
+.modal-footer .save:hover {
+  background: var(--primary-hover);
+}
+
+
+/* ===== CONFIRM DELETE MODAL ===== */
+#confirmModal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  background: rgba(15,23,42,.5);
+  backdrop-filter: blur(6px);
+}
+
+body.dashboard-dark #confirmModal {
+  background: rgba(2,6,23,.75);
+}
+
+#confirmModal.show {
+  display: flex;
+}
+
+#confirmModal .modal-header.danger {
+  background: rgba(239,68,68,.1);
+  color: var(--danger);
+  border-bottom: 1px solid rgba(239,68,68,.3);
+}
+
+#confirmModal .modal-body p {
+  margin: 0;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+#confirmModal .modal-footer .delete {
+  background: var(--danger);
+  color: #fff;
+}
+
+#confirmModal .modal-footer .delete:hover {
+  background: #dc2626;
+}
+
+
+
+/* ================= LOADING ================= */
+#loading {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* ================= TOAST ================= */
+#toastContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toast {
+  min-width: 260px;
+  padding: 14px 16px 18px;
+  border-radius: 12px;
+  color: #fff;
+  backdrop-filter: blur(10px);
+  animation: toastIn .35s ease-out;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px) }
+  to { opacity: 1; transform: translateX(0) }
+}
+
+.toast.info    { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.toast.success { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.toast.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.toast.error   { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+
+mark {
+  background: #ffe066;
+  color: #000;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+body.dark mark {
+  background: #ffb703;
+  color: #000;
+}
+
+
+/* ================= MOBILE ================= */
+@media (max-width: 768px) {
+  .search-wrapper {
+    max-width: 100%;
+  }
+}
+.search-wrapper {
+  position: relative;
+  max-width: 320px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  pointer-events: none;
+  transition: stroke 0.2s ease;
+}
+
+#searchInput {
+  position: relative;
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-color);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+/* focus effect */
+#searchInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+}
+
+#searchInput:focus + .search-icon,
+.search-wrapper:focus-within .search-icon {
+  stroke: var(--primary);
+}
+
+/* placeholder */
+#searchInput::placeholder {
+  color: var(--text-muted);
+}
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.toolbar-right {
+  display: flex;
+  justify-content: flex-end;
+  margin-right: 12px;
+}
+
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.page-info {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.sync {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 220px;
+  padding: 10px;
+  background: #1f2937;
+  color: white;
+  border-radius: 10px;
+  font-size: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  z-index: 9999;
+}
+
+/* TAMPIL */
+.sync.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* STATUS COLOR */
+.sync.syncing { border-left: 4px solid #3b82f6; }
+.sync.done    { border-left: 4px solid #22c55e; }
+.sync.error   { border-left: 4px solid #ef4444; }
+
+.sync .bar {
+  margin-top: 6px;
+  width: 100%;
+  height: 6px;
+  background: #374151;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+#syncProgress {
+  height: 100%;
+  width: 0%;
+  background: #22c55e;
+  transition: width 0.3s;
+}
+
+.sync.syncing #syncProgress { background: #3b82f6; }
+.sync.error   #syncProgress { background: #ef4444; }
+
+.sync.syncing::after {
+  content: "⟳";
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0); }
+  to   { transform: rotate(360deg); }
+}
+
+
+</style>
+</head>
+
+<body>
+ <div id="syncBox" class="sync">
+  <div id="syncText">Idle</div>
+  <div class="bar">
+    <div id="syncProgress"></div>
+  </div>
+</div>
+
+
+
+<h2>Master Kode</h2>
+<div class="card">
+  <div class="actions">
+    <button id="addMasterBtn" class="primary">➕ Tambah</button>
+
+    <label>
+      Tampilkan
+      <select id="perPage">
+        <option value="25" selected>25</option>
+        <option value="50">50</option>
+        <option value="75">75</option>
+      </select>
+      data
+    </label>
+  </div>
+
+
+<div class="table-toolbar">
+  <div></div> <!-- kiri kosong -->
+  <div class="toolbar-right">
+    <div class="search-wrapper">
+      <svg class="search-icon" viewBox="0 0 24 24">
+        <path d="M21 21l-4.35-4.35m1.6-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input id="searchInput" placeholder="Cari data...">
+    </div>
+  </div>
+</div>
+
+  <div id="loading">⏳ Loading data...</div>
+
+
+
+
+  <table id="masterTable">
+    <thead>
+      <tr>
+        <th>Kode</th>
+        <th>Material</th>
+        <th>Stock</th>
+        <th>Currency</th>
+        <th>Qty</th>
+        <th>Satuan</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="table-footer">
+  <div id="pageInfo" class="page-info"></div>
+  <div id="pagination" class="pagination"></div>
+</div>
+
+</div>
+
+<!-- MODAL -->
+<div id="masterModal">
+  <div class="modal-box">
+
+    <div class="modal-header" id="modalTitle">
+      Tambah Master Kode
+    </div>
+
+    <div class="modal-body">
+      <input id="m_kode" placeholder="Kode" required>
+      <input id="m_material" placeholder="Material" required>
+      <input id="m_stock" placeholder="Stock Value" required>
+      <input id="m_currency" placeholder="Currency" required>
+      <input id="m_qty" placeholder="Qty" required>
+      <input id="m_satuan" placeholder="Satuan" required>
+    </div>
+
+    <div class="modal-footer">
+      <button class="cancel" id="cancelMaster">Batal</button>
+      <button class="save" id="saveMaster">Simpan</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL KONFIRMASI HAPUS -->
+<div id="confirmModal">
+  <div class="modal-box">
+
+    <div class="modal-header danger">
+      Konfirmasi Hapus
+    </div>
+
+    <div class="modal-body">
+      <p id="confirmText">
+        Apakah Anda yakin ingin menghapus data ini?
+      </p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="cancel" id="cancelDelete">Batal</button>
+      <button class="delete" id="confirmDelete">Hapus</button>
+    </div>
+
+  </div>
+</div>
+
+
+<script src="renderer_master.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Permintaan Sparepart</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+
+<style>
+
+  /* ====== iOS STYLE GLOBAL ====== */
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    background: #f2f2f7;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .card {
+    width: 60%;
+    max-width: 500px;
+    background: white;
+    padding: 10px;
+    border-radius: 22px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .title { font-size: 22px; font-weight: 700; color: #222; }
+
+  .logout {
+    background: #ff3b30;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 13px;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+ .input-group { width: 100%; margin-bottom: 18px; }
+
+ label { display: block; margin-bottom: 6px; font-size: 15px; font-weight: 600; color: #3a3a3c; }
+
+ input, select, textarea {
+  display: block; width: 100%; padding: 14px; border: 1px solid #d1d1d6;
+  border-radius: 14px; background: #f9f9fb; font-size: 15px; box-sizing: border-box;
+  transition: 0.2s;
+ }
+
+ input:focus, select:focus, textarea:focus {
+  background: #fff; border-color: #007aff; box-shadow: 0 0 10px rgba(0,122,255,0.2);
+ }
+
+ .photo-actions { display: flex; gap: 10px; margin-top: 5px; }
+ .btn { flex: 1; padding: 13px; background: #007aff; color: white; border-radius: 12px; font-weight: 600; border: none; cursor:pointer; }
+ .btn:active { transform: translateY(1px); }
+
+ #preview { width: 100%; margin-top: 14px; border-radius: 18px; display: none; max-height: 420px; object-fit: contain; }
+
+ .submit-btn { width: 100%; padding: 15px; background: #34c759; border-radius: 16px; border: none; margin-top: 15px; color: white; font-size: 17px; font-weight: 700; cursor:pointer; }
+
+ .loading { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; justify-content: center; align-items: center; z-index: 999; }
+ .loader { width: 60px; height: 60px; border: 7px solid #ddd; border-top-color: #007aff; border-radius: 50%; animation: spin 1s linear infinite; }
+ @keyframes spin { to { transform: rotate(360deg); } }
+
+ .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #111; color: white; padding: 14px 22px; border-radius: 14px; opacity: 0; transition: 0.3s; z-index: 9999; }
+ .toast.show { opacity: 1; transform: translate(-50%, -20px); }
+
+ .progress-wrapper { width: 100%; background: #e5e5ea; border-radius: 12px; margin-top: 10px; display: none; }
+ .progress-bar { height: 10px; width: 0%; background: #007aff; border-radius: 12px; transition: width .2s; }
+
+ .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); justify-content:center; align-items:center; z-index:9999; }
+ .modal-content { background:#fff; padding:15px; border-radius:16px; width:120%; max-width:420px; }
+ #cameraStream, #cropImage { width:100%; border-radius:12px; }
+ .btn-secondary { width:100%; padding:12px; border:none; border-radius:12px; background:#ccc; margin-top:10px; cursor:pointer; }
+ .btn-primary { width:100%; padding:12px; border:none; border-radius:12px; background:#007aff; color:#fff; margin-top:10px; cursor:pointer; }
+
+
+
+.autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  z-index: 999;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.autocomplete-list li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.autocomplete-list li:hover {
+  background: #007aff;
+  color: white;
+}
+
+
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="title">Permintaan Sparepart</div>
+    <button class="logout" id="logoutBtn">Logout</button>
+  </div>
+
+  <div class="input-group">
+    <label>Area</label>
+    <select id="area">
+      <option value=""></option>
+      <option>Produksi</option>
+      <option>Utility</option>
+      <option>Mechanical</option>
+      <option>Electrical</option>
+      <option>Gudang</option>
+    </select>
+  </div>
+
+  <div class="input-group">
+    <label>Nama Mesin</label>
+    <input type="text" id="mesin" />
+  </div>
+
+<div class="input-group" style="position: relative;">
+  <label>Nama Sparepart</label>
+  <input type="text" id="nama_part" autocomplete="off" />
+  <ul id="partList" class="autocomplete-list"></ul>
+  <div id="partHint" style="margin-top: 4px; font-size: 14px;"></div>
+</div>
+
+
+
+
+  <div class="input-group">
+    <label>Quantity</label>
+    <input type="number" id="qty" min="1" />
+  </div>
+
+  <div class="input-group">
+    <label>Alasan Permintaan</label>
+    <textarea id="alasan" rows="3"></textarea>
+  </div>
+
+  <label>Foto Sparepart</label>
+  <div class="photo-actions">
+    <button class="btn" id="cameraBtn">📷 Kamera</button>
+    <button class="btn" id="galleryBtn">🖼 Galeri</button>
+  </div>
+
+  <!-- Hidden file inputs -->
+  <input type="file" id="galleryInput" accept="image/*" style="display:none" />
+  <input type="file" id="camera" accept="image/*" capture="environment" hidden />
+
+  <!-- LIVE CAMERA MODAL -->
+  <div id="cameraModal" class="modal">
+    <div class="modal-content">
+      <video id="cameraStream" autoplay playsinline></video>
+      <button id="captureBtn" class="btn-primary">📸 Ambil Foto</button>
+      <button id="closeCameraBtn" class="btn-secondary">Tutup</button>
+    </div>
+  </div>
+
+  <!-- CROP MODAL -->
+  <div id="cropModal" class="modal">
+    <div class="modal-content">
+      <img id="cropImage" alt="crop preview">
+      <button id="applyCropBtn" class="btn-primary">Gunakan Foto</button>
+      <button id="closeCropBtn" class="btn-secondary">Batal</button>
+    </div>
+  </div>
+
+  <img id="preview" alt="preview gambar">
+
+  <div class="progress-wrapper" id="progressWrapper">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn">Kirim Permintaan</button>
+</div>
+
+<div class="loading" id="loading">
+  <div class="loader"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/cropperjs@1.5.13/dist/cropper.js"></script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // State
+  let stream = null;
+  let cropper = null;
+  let selectedFile = null;
+  let croppedBlob = null;
+  const IDLE_LIMIT = 1 * 60 * 1000;
+  let idleTimer;
+
+  // Elements
+  const galleryInput = document.getElementById("galleryInput");
+  const preview = document.getElementById("preview");
+  const cameraModal = document.getElementById("cameraModal");
+  const cropModal = document.getElementById("cropModal");
+  const cameraStream = document.getElementById("cameraStream");
+  const submitBtn = document.getElementById("submitBtn");
+  const galleryBtn = document.getElementById("galleryBtn");
+  const cameraBtn = document.getElementById("cameraBtn");
+  const captureBtn = document.getElementById("captureBtn");
+  const closeCameraBtn = document.getElementById("closeCameraBtn");
+  const applyCropBtn = document.getElementById("applyCropBtn");
+  const closeCropBtn = document.getElementById("closeCropBtn");
+  const toastEl = document.getElementById("toast");
+  const loadingEl = document.getElementById("loading");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+
+  /* ======================
+   MASTER KODE CHECK
+====================== */
+const namaPartInput = document.getElementById("nama_part");
+const partList = document.getElementById("partList");
+const partHint = document.getElementById("partHint");
+
+let allParts = []; // akan diisi dari master_kode
+let partStandar = null; // nama part standar
+let partId = null;      // id master_kode jika ada
+
+
+async function loadAllParts() {
+  allParts = await window.api.getMasterKode();
+}
+loadAllParts();
+
+function normalize(str) {
+  return str.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
+}
+
+function updatePartRecognition(inputVal) {
+  const normInput = normalize(inputVal);
+
+  // cek exact match
+  const exact = allParts.find(p => normalize(p.material) === normInput);
+
+  if (exact) {
+    partStandar = exact.material;
+    partId = exact.id;
+    partHint.textContent = "✅ Part dikenali (nama distandarkan)";
+    partHint.style.color = "green";
+  } else {
+    partStandar = null;
+    partId = null;
+    partHint.textContent = "ℹ️ Pilih nama part standar dari daftar";
+    partHint.style.color = "#007aff";
+  }
+
+  // list relevan
+  const options = allParts.filter(p => normalize(p.material).includes(normInput));
+  if (options.length) {
+    partList.innerHTML = options
+      .map(p => `<li data-id="${p.id}" data-kode="${p.kode}">${p.material}</li>`)
+      .join("");
+    partList.style.display = "block";
+  } else {
+    partList.style.display = "none";
+  }
+}
+
+// event input
+namaPartInput.addEventListener("input", () => {
+  const val = namaPartInput.value.trim();
+  if (!val) {
+    partList.style.display = "none";
+    partHint.textContent = "";
+    partStandar = null;
+    partId = null;
+    return;
+  }
+  updatePartRecognition(val);
+});
+
+// pilih dari list
+partList.addEventListener("click", (e) => {
+  if (e.target.tagName === "LI") {
+    const selected = e.target;
+    namaPartInput.value = selected.textContent;
+    partStandar = selected.textContent;
+    partId = selected.dataset.id;
+    partList.style.display = "none";
+    partHint.textContent = "✅ Part dipilih dari daftar";
+    partHint.style.color = "green";
+  }
+});
+
+// sembunyikan list saat klik di luar
+document.addEventListener("click", (e) => {
+  if (!namaPartInput.contains(e.target) && !partList.contains(e.target)) {
+    partList.style.display = "none";
+  }
+});
+
+
+//===============================end this shit========================//
+
+
+
+
+  // Expose functions to global in case inline onclick used elsewhere
+  window.openGallery = () => galleryInput && galleryInput.click();
+  window.openCamera = openCamera;
+
+  // Safety: only attach listeners if element exists
+  if (galleryInput) {
+    galleryInput.addEventListener("change", (e) => {
+      if (!e.target.files || !e.target.files.length) return;
+      selectedFile = e.target.files[0];
+      openCropper(URL.createObjectURL(selectedFile));
+    });
+  }
+
+  if (galleryBtn) galleryBtn.addEventListener("click", () => galleryInput && galleryInput.click());
+  if (cameraBtn) cameraBtn.addEventListener("click", openCamera);
+  if (captureBtn) captureBtn.addEventListener("click", capturePhoto);
+  if (closeCameraBtn) closeCameraBtn.addEventListener("click", closeCamera);
+  if (applyCropBtn) applyCropBtn.addEventListener("click", applyCrop);
+  if (closeCropBtn) closeCropBtn.addEventListener("click", closeCrop);
+  if (logoutBtn) logoutBtn.addEventListener("click", logout);
+
+  function showToast(msg){
+    toastEl.innerText = msg;
+    toastEl.classList.add("show");
+    setTimeout(()=> toastEl.classList.remove("show"), 3000);
+  }
+  function showLoading(){ loadingEl.style.display = "flex"; }
+  function hideLoading(){ loadingEl.style.display = "none"; }
+
+  /* ======================
+     OPEN CAMERA
+  ====================== */
+  async function openCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false
+      });
+      cameraStream.srcObject = stream;
+      cameraStream.play();
+      cameraModal.style.display = "flex";
+    } catch (e) {
+      console.error(e);
+      showToast("Tidak bisa membuka kamera (izin dibutuhkan atau tidak tersedia)");
+    }
+  }
+
+  function closeCamera() {
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+    cameraModal.style.display = "none";
+  }
+
+  /* ======================
+     CAPTURE TO CROP
+  ====================== */
+  function capturePhoto() {
+    if (!cameraStream.videoWidth || !cameraStream.videoHeight) {
+      showToast("Kamera belum siap");
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = cameraStream.videoWidth;
+    canvas.height = cameraStream.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(cameraStream, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(blob => {
+      if (!blob) {
+        showToast("Gagal mengambil foto");
+        return;
+      }
+      selectedFile = blob;
+      closeCamera();
+      openCropper(URL.createObjectURL(blob));
+    }, "image/jpeg", 0.95);
+  }
+
+  /* ======================
+     CROP
+  ====================== */
+  function openCropper(url) {
+    const img = document.getElementById("cropImage");
+    img.src = url;
+    cropModal.style.display = "flex";
+
+    if (cropper) cropper.destroy();
+    cropper = new Cropper(img, {
+      aspectRatio: NaN,
+      viewMode: 1,
+      movable: true,
+      zoomable: true,
+      background: false
+    });
+  }
+
+  function closeCrop() {
+    cropModal.style.display = "none";
+    if (cropper) {
+      cropper.destroy();
+      cropper = null;
+    }
+  }
+
+  function applyCrop() {
+    if (!cropper) return showToast("Tidak ada gambar untuk dipotong");
+    cropper.getCroppedCanvas().toBlob(blob => {
+      if (!blob) return showToast("Gagal memproses gambar");
+      croppedBlob = blob;
+      preview.src = URL.createObjectURL(blob);
+      preview.style.display = "block";
+      closeCrop();
+    }, "image/jpeg", 0.9);
+  }
+
+  /* ======================
+     UTILS: compress
+  ====================== */
+  async function blobToImage(blob){
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("img load error")); };
+      img.src = url;
+    });
+  }
+
+  async function compressBlobToLimit(blob, maxBytes = 1024 * 1024){
+    if (!blob) return blob;
+    if (blob.size <= maxBytes) return blob;
+
+    try {
+      const img = await blobToImage(blob);
+      const maxDim = 1200;
+      const scale = Math.min(1, Math.min(maxDim / img.width, maxDim / img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      return new Promise(resolve => {
+        canvas.toBlob(b => resolve(b), "image/jpeg", 0.7);
+      });
+    } catch (err) {
+      // kalau gagal compress, return original blob
+      console.warn("compress failed, returning original blob", err);
+      return blob;
+    }
+  }
+
+
+  //============================
+  //Auto logout
+  //========================
+  function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(autoLogout, IDLE_LIMIT);
+}
+
+// Auto logout
+async function autoLogout() {
+  console.log("Auto logout karena tidak ada aktivitas.");
+
+  // signOut Supabase (jika masih login)
+  try {
+    await supabaseClient.auth.signOut({ scope: "global" });
+  } catch(e){}
+
+  // Bersihkan localStorage
+  //localStorage.removeItem("remember");
+  localStorage.removeItem("user");
+  localStorage.removeItem("redirectAfterLogin");
+
+  // Redirect ke login
+  window.location.href = "loginUser.html";
+}
+
+// Event yang dianggap aktivitas
+["click", "mousemove", "keypress", "scroll", "touchstart"].forEach(evt => {
+  window.addEventListener(evt, resetIdleTimer);
+});
+
+// Start timer ketika halaman dibuka
+resetIdleTimer();
+ //================================================//
+
+
+  /* ======================
+     SUBMIT
+  ====================== */
+const SUPABASE_URL = "https://hlleyvltrlopiagyrvbr.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsbGV5dmx0cmxvcGlhZ3lydmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NjE3NTksImV4cCI6MjA4MDQzNzc1OX0.L_8J118cgDWAgxe4B7t6RxU3gjEXzKWDvj53cIMFX7k";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUserEmail = null;
+let currentUsername = null;
+
+/* ======================
+   AMBIL DATA USER LOGIN
+====================== */
+async function loadUserData() {
+  const { data: { user }, error } = await supabaseClient.auth.getUser();
+
+  if (!user) {
+    console.log("User belum login");
+    return;
+  }
+
+  currentUserEmail = user.email;
+
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("users")
+    .select("username")
+    .eq("auth_id", user.id)
+    .single();
+
+  if (!profileError && profile) {
+    currentUsername = profile.username;
+  }
+
+  console.log("Login sebagai:", currentUsername, currentUserEmail);
+}
+
+
+  if (submitBtn) submitBtn.addEventListener("click", async () => {
+  const areaVal = document.getElementById("area").value.trim();
+  const mesinVal = document.getElementById("mesin").value.trim();
+  const partInputVal = namaPartInput.value.trim();
+  const partFinal = partStandar || partInputVal;
+  const qtyVal = document.getElementById("qty").value.trim();
+  const alasanVal = document.getElementById("alasan").value.trim();
+
+  if (!areaVal || !mesinVal || !partFinal || !qtyVal || !alasanVal) {
+    return showToast("Lengkapi semua field!");
+  }
+
+  const fileForUpload = croppedBlob || selectedFile;
+  if (!fileForUpload) return showToast("Foto wajib diunggah!");
+
+  showLoading();
+
+  try {
+    const fileToUpload = await compressBlobToLimit(fileForUpload, 1024 * 1024);
+
+    const fileExt = "jpg";
+    const filename = `sparepart_request/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+    const { data, error } = await supabaseClient.storage
+      .from("Photos")
+      .upload(filename, fileToUpload);
+
+    hideLoading();
+    if (error) return showToast("Upload gagal");
+
+    const foto_url = supabaseClient.storage.from("Photos").getPublicUrl(filename).data.publicUrl;
+
+    if (!currentUserEmail || !currentUsername) {
+      return showToast("Anda belum login");
+    }
+
+const partFinal = partStandar || partInputVal;
+const partIdToSend = partId || null; // int64 / int8
+
+const { error: insertError } = await supabaseClient
+  .from("sparepart_requests")
+  .insert([{
+    mesin: mesinVal,
+    nama_part: partFinal,
+    area: areaVal,
+    qty: parseInt(qtyVal),
+    alasan: alasanVal,
+    foto_url: foto_url,
+    request_by: currentUsername,
+    request_by_email: currentUserEmail,
+    status: "PENDING",
+    master_kode_id: partIdToSend,        // int8
+    is_new_part: partIdToSend ? false : true
+  }]);
+
+
+    if (insertError) {
+      console.error(insertError);
+      showToast("Gagal simpan data");
+    } else {
+      showToast("Berhasil dikirim ✅");
+      // reset form
+      preview.style.display = "none";
+      preview.src = "";
+      selectedFile = null;
+      croppedBlob = null;
+      document.getElementById("area").value = "";
+      document.getElementById("mesin").value = "";
+      namaPartInput.value = "";
+      partStandar = null;
+      partId = null;
+      document.getElementById("qty").value = "";
+      document.getElementById("alasan").value = "";
+    }
+
+  } catch (err) {
+    hideLoading();
+    console.error(err);
+    showToast("Terjadi kesalahan saat mengirim");
+  }
+});
+
+  /* ======================
+     LOGOUT
+  ====================== */
+  function logout(){
+    try { localStorage.removeItem("user"); } catch(e){}
+    if (supabaseClient && supabaseClient.auth) supabaseClient.auth.signOut().catch(()=>{});
+    window.location.href = "index.html";
+  }
+loadUserData();
+}); // end DOMContentLoaded
+</script>
+</body>
+</html>

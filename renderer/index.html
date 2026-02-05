@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Purchase Sparepart Manager</title>
+  <link rel="stylesheet" href="style.css">
+  <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"/>
+
+<body>
+  <style>
+
+.location-loading {
+  position: absolute;
+  inset: 0; /* top:0 right:0 bottom:0 left:0 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+
+  border-radius: 12px;
+  font-size: 13px;
+  color: #fff;
+  z-index: 9999;
+}
+
+.location-loading.hidden {
+  display: none;
+}
+
+/* Box kecil di tengah */
+.location-loading .loading-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(20,20,20,0.85);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  position: relative;
+}
+
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top: 3px solid #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+  </style>
+<div id="global-loading" class="loading-hidden">
+  <div class="loader"></div>
+  <p>Loading screen...</p>
+</div>
+
+<div class="layout">
+  <!-- LEFT FORM -->
+
+  <div class="left-panel">
+<button type="button" id="loadMasterBtn">Load Master CSV</button>
+
+    <h2>Form Pembelian Sparepart</h2>
+
+    <form id="spareForm">
+ <div id="resultOptions" class="option-box"></div>
+      <div class="field"><label>Tanggal</label><input type="date" id="tanggal" required></div>
+
+      <div class="field"><label>Week</label><input type="text" id="week" readonly></div>
+      <div class="field"><label>No Material</label><input type="text" id="nomor_material" required><div id="materialTooltip" class="material-tooltip"></div>
+
+
+      </div>
+
+     <div class="field"><label>Nama Sparepart</label><input type="text" id="nama_sparepart"required style="text-transform: uppercase;"></div>
+
+      <div class="field"><label>Vendor</label><input type="text" id="vendor" style="text-transform: uppercase;"></div>
+
+      <div class="field"><label>Quantity</label><input type="number" id="quantity" required></div>
+      <div class="field"><label>Harga Satuan</label><input type="number" id="harga_satuan" required></div>
+      <div class="field"><label>Function Location</label><select id="function_location" required></select></div>
+      <div class="field"><label>Sub Location</label><select id="sub_location" required></select></div>
+
+     <div class="actions">
+    <button type="submit">Simpan</button>
+    <button type="button" id="addLocationBtn">Add</button>
+    </div>
+
+    </form>
+
+<div class="department-card">
+  <h3>Department Management</h3>
+
+  <div id="deptFormContainer">
+    <div class="field">
+      <label>Kode Factory</label>
+      <input type="number" id="factKode">
+    </div>
+
+    <div class="field">
+      <label>Nama Department</label>
+      <input type="text" id="deptNama">
+    </div>
+
+    <button id="btnDeptSave">Simpan Department</button>
+  </div>
+</div>
+
+</div>
+
+
+  <!-- RIGHT PANEL (HISTORY + TREND) -->
+<div class="right-panel">
+
+ <div class="history-box">
+  <h3>
+    History Minggu Ini
+    <div class="history-nav">
+      <button id="prevWeek">◀</button>
+      <span id="weekLabel">Minggu ini</span>
+      <button id="nextWeek">▶</button>
+       <span id="totalWeek" class="total-label">Total: Rp 0</span>
+    </div>
+  </h3>
+  <table id="historyWeek">
+    <thead>
+      <tr>
+        <th>Tanggal</th><th>No. Material</th><th>Nama Sparepart</th>
+        <th>Vendor</th><th>Qty</th><th>Function Loc</th>
+        <th>Sub Loc</th><th>Harga</th><th>Total</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="history-box">
+  <h3>
+    History Bulan Ini
+    <div class="history-nav">
+      <button id="prevMonth">◀</button>
+      <span id="monthLabel">Bulan ini</span>
+      <button id="nextMonth">▶</button>
+      <span id="totalMonth" class="total-label">Total: Rp 0</span>
+    </div>
+  </h3>
+  <table id="historyMonth">
+    <thead>
+      <tr>
+        <th>Tanggal</th><th>No. Material</th><th>Nama Sparepart</th>
+        <th>Vendor</th><th>Qty</th><th>Function Loc</th>
+        <th>Sub Loc</th><th>Harga</th><th>Total</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+  <h2 class="section-title">Dashboard Trend Pembelian</h2>
+
+  <div class="trend-grid" id="trendGrid" data-lock>
+
+    <div class="trend-card">
+      <h4>Vendor</h4>
+      <select id="vendorChartType" class="chart-select">
+        <option value="line">Line</option>
+        <option value="bar">Bar</option>
+        <option value="pie">Pie</option>
+      </select>
+      <canvas id="chartVendor"></canvas>
+    </div>
+
+    <div class="trend-card">
+      <h4>Item</h4>
+      <select id="itemChartType" class="chart-select">
+        <option value="line">Line</option>
+        <option value="bar">Bar</option>
+        <option value="pie">Pie</option>
+      </select>
+      <canvas id="chartItem"></canvas>
+    </div>
+
+    <div class="trend-card">
+      <h4>Function Location</h4>
+      <select id="flChartType" class="chart-select">
+        <option value="line">Line</option>
+        <option value="bar">Bar</option>
+        <option value="pie">Pie</option>
+      </select>
+      <canvas id="chartFunction"></canvas>
+    </div>
+
+    <div class="trend-card">
+      <h4>Total Harga</h4>
+      <select id="hargaChartType" class="chart-select">
+        <option value="line">Line</option>
+        <option value="bar">Bar</option>
+        <option value="pie">Pie</option>
+      </select>
+      <canvas id="chartHarga"></canvas>
+    </div>
+
+  </div>
+
+</div>
+
+<div id="addModal" class="modal hidden">
+  <div class="modal-content glass">
+    <h3>Tambah Lokasi</h3>
+
+    <!-- Pilih Function Location dari list (opsional untuk Sub Location) -->
+    <div class="field">
+      <label>Function Location (pilih jika menambah Sub Location)</label>
+      <select id="modalFuncSelect">
+        <option value="">-- Pilih Function Location --</option>
+      </select>
+    </div>
+
+    <!-- Input Function Location baru (bisa ditambahkan langsung) -->
+    <div class="field">
+      <label>Function Location Baru</label>
+      <input type="text" id="newFuncLoc" placeholder="Masukkan Function Location baru...">
+    </div>
+
+    <!-- Input Sub Location -->
+    <div class="field">
+      <label>Sub Location (opsional, harus pilih Function Location jika diisi)</label>
+      <input type="text" id="newSubLoc" placeholder="Masukkan Sub Location baru...">
+    </div>
+
+    <div class="input-actions">
+      <button id="saveNewLoc">Simpan</button>
+      <button id="cancelNewLoc">Batal</button>
+    </div>
+   <div class="location-loading hidden" id="locationLoading">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div>Menyimpan lokasi...</div>
+  </div>
+</div>
+
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+<!-- Overlay Loading -->
+<div id="loadingOverlay" class="hidden">
+  <div class="loading-spinner"></div>
+  <span>Memproses data...</span>
+</div>
+
+
+
+<script src="../js/chart.umd.js"></script>
+<script src="../js/app.js"></script>
+<script src="renderer.js"></script>
+<script src="../js/toast.js"></script>
+
+</head>
+</body>
+</html>

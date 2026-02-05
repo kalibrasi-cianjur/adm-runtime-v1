@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laman Sedang Dalam Perbaikan</title>
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    background: #010103;
+    font-family: "Segoe UI", sans-serif;
+    color: #00ffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* ======================== CANVAS ======================== */
+#networkCanvas, #fogCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* ======================== TEXT ======================== */
+.text-center {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+}
+.text-center h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+.text-center p {
+    font-size: 18px;
+}
+#timer { font-size: 14px; margin-top: 10px; color: #00ffff; }
+
+</style>
+</head>
+<body>
+
+<canvas id="fogCanvas"></canvas>
+<canvas id="networkCanvas"></canvas>
+
+<div class="text-center">
+    <h1>LAMAN DALAM PERBAIKAN</h1>
+    <p>Sistem sedang diperbarui...</p>
+    <div id="timer">Mengalihkan dalam 60 detik...</div>
+</div>
+
+<script>
+// ================= CANVAS SETUP =================
+const networkCanvas = document.getElementById("networkCanvas");
+const networkCtx = networkCanvas.getContext("2d");
+networkCanvas.width = window.innerWidth;
+networkCanvas.height = window.innerHeight;
+
+const fogCanvas = document.getElementById("fogCanvas");
+const fogCtx = fogCanvas.getContext("2d");
+fogCanvas.width = window.innerWidth;
+fogCanvas.height = window.innerHeight;
+
+// ================= NEURAL NETWORK =================
+let nodes = [];
+const nodeCount = 100;
+
+// Create random nodes
+for (let i=0; i<nodeCount; i++){
+    nodes.push({
+        x: Math.random() * networkCanvas.width,
+        y: Math.random() * networkCanvas.height,
+        radius: Math.random() * 2 + 1,
+        dx: (Math.random() - 0.5) * 0.7,
+        dy: (Math.random() - 0.5) * 0.7
+    });
+}
+
+function drawNetwork(){
+    networkCtx.fillStyle = "rgba(1,1,3,0.15)";
+    networkCtx.fillRect(0,0,networkCanvas.width,networkCanvas.height);
+
+    // Draw connections
+    for (let i=0; i<nodes.length; i++){
+        let nodeA = nodes[i];
+        for (let j=i+1; j<nodes.length; j++){
+            let nodeB = nodes[j];
+            let dist = Math.hypot(nodeA.x - nodeB.x, nodeA.y - nodeB.y);
+            if (dist < 120){
+                networkCtx.strokeStyle = `rgba(0,255,255,${1 - dist/120})`;
+                networkCtx.lineWidth = 1;
+                networkCtx.beginPath();
+                networkCtx.moveTo(nodeA.x,nodeA.y);
+                networkCtx.lineTo(nodeB.x,nodeB.y);
+                networkCtx.stroke();
+            }
+        }
+    }
+
+    // Draw nodes
+    nodes.forEach(node=>{
+        node.x += node.dx;
+        node.y += node.dy;
+        if(node.x < 0 || node.x > networkCanvas.width) node.dx *= -1;
+        if(node.y < 0 || node.y > networkCanvas.height) node.dy *= -1;
+
+        networkCtx.beginPath();
+        networkCtx.arc(node.x,node.y,node.radius,0,Math.PI*2);
+        networkCtx.fillStyle = "#00ffff";
+        networkCtx.fill();
+    });
+
+    requestAnimationFrame(drawNetwork);
+}
+
+drawNetwork();
+
+// ================= FOG EFFECT =================
+let fogParticles = [];
+const fogCount = 80;
+
+for (let i=0;i<fogCount;i++){
+    fogParticles.push({
+        x: Math.random()*fogCanvas.width,
+        y: Math.random()*fogCanvas.height,
+        radius: Math.random()*200 + 100,
+        alpha: Math.random()*0.1 + 0.05,
+        dx: (Math.random()-0.5)*0.2,
+        dy: (Math.random()-0.5)*0.2
+    });
+}
+
+function drawFog(){
+    fogCtx.clearRect(0,0,fogCanvas.width,fogCanvas.height);
+    fogParticles.forEach(p=>{
+        p.x += p.dx;
+        p.y += p.dy;
+        if(p.x<-p.radius) p.x = fogCanvas.width + p.radius;
+        if(p.x>fogCanvas.width + p.radius) p.x = -p.radius;
+        if(p.y<-p.radius) p.y = fogCanvas.height + p.radius;
+        if(p.y>fogCanvas.height + p.radius) p.y = -p.radius;
+
+        let grad = fogCtx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.radius);
+        grad.addColorStop(0, `rgba(0,255,255,${p.alpha})`);
+        grad.addColorStop(1, `rgba(0,255,255,0)`);
+        fogCtx.fillStyle = grad;
+        fogCtx.fillRect(0,0,fogCanvas.width,fogCanvas.height);
+    });
+    requestAnimationFrame(drawFog);
+}
+
+drawFog();
+
+// ================= RESIZE =================
+window.addEventListener('resize', ()=>{
+    networkCanvas.width = window.innerWidth;
+    networkCanvas.height = window.innerHeight;
+    fogCanvas.width = window.innerWidth;
+    fogCanvas.height = window.innerHeight;
+});
+
+// ================= TIMER =================
+let t = 60;
+const timer = document.getElementById("timer");
+const interval = setInterval(()=>{
+    t--;
+    timer.textContent = "Mengalihkan dalam " + t + " detik...";
+    if(t<=0){
+        clearInterval(interval);
+        window.location.href = "/index.html";
+    }
+},1000);
+
+setTimeout(()=>{window.location.href="/index.html";},60000);
+</script>
+
+</body>
+</html>

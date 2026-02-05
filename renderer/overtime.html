@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Input Lembur</title>
+
+ <link rel="stylesheet" href="style.css">
+      <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
+
+<style>
+/* ================= THEME ================= */
+:root {
+  --bg: #eef2ff;
+  --card: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --primary: #4f46e5;
+   --card-shadow: 0 4px 14px rgba(0,0,0,0.06);
+   --btn-bg: var(--card);     /* ⬅️ ikut theme */
+  --btn-text: var(--text);
+  --btn-border: var(--border);
+
+}
+
+.dashboard-dark {
+  --bg: #020617;      /* background halaman */
+  --card: #0f172a;    /* background card */
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --border: #334155;
+  --primary: #6366f1;
+
+  --card-shadow: 0 6px 20px rgba(0,0,0,0.45);
+--btn-bg: #ffffff;         /* ⬅️ paksa terang */
+  --btn-text: #020617;
+  --btn-border: rgba(0,0,0,.12);
+}
+
+
+.report-card,
+.sales-report,
+.weekly-overtime,
+.modal-box,
+.employee-drawer,
+#configDrawer {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+body {
+  margin: 0;
+  font-family: Inter, system-ui, Arial;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ================= HEADER ================= */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 3000;
+
+  height: 70px;
+  padding-left: 10px;
+  padding-right: 22px;
+
+  display: flex;
+  align-items: center;
+
+  background: linear-gradient(90deg, #0f172a, #020617);
+  color: #ffffff;
+
+  box-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+
+
+/* TITLE */
+.app-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* ================= DARK MODE SUPPORT ================= */
+.dashboard-dark .app-header {
+  background: linear-gradient(90deg, #020617, #000000);
+  box-shadow: 0 2px 14px rgba(0,0,0,.6);
+}
+
+
+/* ================= HAMBURGER ================= */
+.hamburger-btn {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 5000;
+  background: var(--card);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--icon-color);
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+/* ================= DRAWER ================= */
+.employee-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 760px;
+  height: 100vh;
+  background: var(--card);
+  box-shadow: 8px 0 30px rgba(0,0,0,.4);
+  transform: translateX(-100%);
+  transition: .3s ease;
+  z-index: 4000;
+}
+
+.employee-drawer.show {
+  transform: translateX(0);
+}
+
+.hamburger-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(.9);
+}
+
+.hamburger-btn:hover {
+color: var(--icon-color);
+}
+
+.hamburger-btn:active {
+  transform: scale(0.95);
+}
+
+/* SVG mengikuti warna tema */
+.hamburger-btn .icon {
+  display: block;
+}
+/* ================= LAYOUT ================= */
+.drawer-layout {
+  display: flex;
+  height: 100%;
+}
+
+/* ================= LIST KARYAWAN ================= */
+.employee-list {
+  width: 260px;
+  border-right: 1px solid var(--border);
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.employee-list h2 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.employee-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.employee-list li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  background: rgba(99,102,241,.08);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.employee-list li:hover {
+  background: var(--primary);
+  color: white;
+}
+
+/* ================= FORM LEMBUR ================= */
+.employee-form {
+  flex: 1;
+  padding: 14px 18px;
+  overflow-y: auto;
+}
+
+.employee-form h2 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* FORM FIELD */
+.employee-form label {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  font-size: 10px;
+  letter-spacing: .06em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.employee-form input,
+.employee-form select,
+.employee-form textarea {
+  margin-top: 4px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  background: transparent;
+  color: var(--text);
+}
+
+.employee-form textarea {
+  min-height: 52px;
+}
+
+.employee-form input:focus,
+.employee-form select:focus,
+.employee-form textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* ================= SUMMARY ================= */
+.employee-form .summary {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#0f172a,#020617);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.employee-form .summary div {
+  font-size: 10px;
+  color: #c7d2fe;
+}
+
+.employee-form .summary strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 900;
+  color: white;
+}
+
+/* ================= BUTTON ================= */
+.employee-form button {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg,#4f46e5,#4338ca);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.employee-form button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* ================= ICON ================= */
+.icon-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* ================= TOAST ================= */
+#toastContainer {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  min-width: 240px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(0,0,0,.35);
+  animation: toast-slide .25s ease, toast-fade 4s forwards;
+}
+
+.toast.success { background: linear-gradient(135deg,#16a34a,#15803d); }
+.toast.info    { background: linear-gradient(135deg,#2563eb,#1d4ed8); }
+.toast.error   { background: linear-gradient(135deg,#dc2626,#b91c1c); }
+
+/* ================= LOADING ================= */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200000;
+}
+
+.loading-overlay.hidden {
+  display: none;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #334155;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes toast-slide {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-fade {
+  0%,85% { opacity: 1; }
+  100%   { opacity: 0; }
+}
+
+
+/* ================= CONFIG DRAWER (KANAN) ================= */
+#configDrawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100vh;
+  background: var(--card, #ffffff);
+  color: var(--text, #111827);
+  box-shadow: -8px 0 30px rgba(0,0,0,.35);
+  padding: 16px;
+  z-index: 6000;
+
+  transform: translateX(100%);
+  transition: transform .3s ease;
+}
+
+/* tampil */
+#configDrawer.show {
+  transform: translateX(0);
+}
+
+/* sembunyi (default) */
+#configDrawer.hidden {
+  display: none;
+}
+
+/* isi form */
+#configDrawer h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+#configDrawer label {
+  display: block;
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--muted, #6b7280);
+  text-transform: uppercase;
+}
+
+#configDrawer input {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #e5e7eb);
+}
+
+#btnSaveConfig {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: var(--primary, #4f46e5);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+
+
+/* =====================================================
+   WEEKLY REPORT — FINAL DARK/LIGHT SAFE
+===================================================== */
+
+:root {
+  --weekly-badge-width: 96px;
+}
+
+/* ================= WRAPPER ================= */
+.weekly-report {
+  position: relative;
+  margin-top: 16px;
+  padding-left: calc(var(--weekly-badge-width) + 28px);
+  animation: slideDown .25s ease;
+}
+
+/* ================= BACK BUTTON ================= */
+.back-btn {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+
+/* ================= BADGE ================= */
+.weekly-days-vertical {
+  position: absolute;
+  top: 43px;
+  left: 5px;
+  width: var(--weekly-badge-width);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 800;
+}
+
+.day-badge {
+  width: 100%;
+  padding: 10px 6px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  text-align: center;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all .25s ease;
+}
+
+.day-badge strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.day-badge.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.day-badge.active strong {
+  color: #fff;
+}
+
+/* ================= SUMMARY ================= */
+.weekly-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.summary-box {
+  background: linear-gradient(135deg,#0f172a,#020617);
+  border-radius: 16px;
+  padding: 14px 16px;
+  color: #e5e7eb;
+}
+
+.summary-box h4 {
+  margin: 0 0 10px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #c7d2fe;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.summary-row strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* ================= TABLE ================= */
+.weekly-overtime {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.weekly-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.weekly-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.weekly-table th,
+.weekly-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.weekly-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ================= HOVER ================= */
+.weekly-table tbody tr:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+/* =====================================================
+   🔥 HIGHLIGHT — LIGHT MODE
+===================================================== */
+.weekly-table tbody tr.highlight {
+  background: color-mix(
+    in srgb,
+    var(--primary) 22%,
+    #ffffff
+  ) !important;
+  box-shadow: inset 4px 0 0 var(--primary);
+}
+
+.weekly-table tbody tr.highlight td {
+  color: #111827;
+  font-weight: 600;
+}
+
+/* =====================================================
+   🌙 HIGHLIGHT — DARK MODE (FIX UTAMA)
+===================================================== */
+.dashboard-dark .weekly-table tbody tr.highlight {
+  background: rgba(79,70,229,.25) !important;
+  box-shadow: inset 4px 0 0 #818cf8;
+}
+
+.dashboard-dark .weekly-table tbody tr.highlight td {
+  color: #f8fafc !important;
+  font-weight: 600;
+}
+
+/* ================= FOOTER ================= */
+.weekly-table tfoot td {
+  font-weight: 800;
+  color: var(--primary);
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+  .weekly-report {
+    padding-left: calc(var(--weekly-badge-width) + 14px);
+  }
+
+  .weekly-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ================= ANIMATION ================= */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+.weekly-table tr.empty-today td {
+  text-align: center;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.dashboard-dark .weekly-table tr.empty-today td {
+  color: #e5e7eb;
+}
+
+
+
+
+
+.report-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.report-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0,0,0,.08);
+}
+
+.report-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.report-icon svg {
+  width: 34px;
+  height: 34px;
+  fill: #000;
+}
+
+.report-text h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.report-text p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.weekly-report {
+  margin-top: 16px;
+  animation: slideDown .25s ease;
+}
+
+.hidden {
+  display: none;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* saat report dibuka */
+.report-card.active .report-icon {
+  display: none;
+}
+
+/* rapikan text saat icon hilang */
+.report-card.active {
+  justify-content: flex-start;
+}
+
+
+.hidden {
+  display: none;
+}
+
+.back-btn {
+  background: var(--card);
+  border: 1px solid #ddd;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  left: 5px;
+}
+
+.back-btn:hover {
+  background: var(--card);
+}
+
+
+
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45); /* dark soft */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modal {
+  background: var(--card);
+  color: var(--text);
+
+  width: 420px;
+  height: 100px;
+  max-width: calc(100vw - 32px);
+
+  padding: 16px 20px;
+  border-radius: 14px;
+  position: relative;
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.15),
+    0 4px 10px rgba(0, 0, 0, 0.08);
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  animation: modalIn 0.18s ease-out;
+}
+
+.modal h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.modal p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted-text);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.modal-actions button {
+  min-width: 88px;
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-overlay:has(.modal) {
+  backdrop-filter: blur(2px);
+}
+
+
+
+
+/* ================= CARD SALES ================= */
+.sales-report {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  margin-top: 16px;
+
+  box-shadow: var(--card-shadow);
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  animation: slideDown 0.25s ease;
+}
+
+
+.sales-report.hidden {
+  display: none;
+}
+
+.sales-report button.back-btn {
+  align-self: flex-start;
+  padding: 8px 14px;
+
+  background: var(--btn-bg);
+  color: var(--btn-text);
+
+  border: 1px solid var(--btn-border);
+  border-radius: 10px;
+
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  box-shadow: 0 4px 10px rgba(0,0,0,.08);
+  transition:
+    background .2s ease,
+    color .2s ease,
+    box-shadow .2s ease,
+    transform .15s ease;
+}
+.sales-report button.back-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0,0,0,.14);
+}
+
+.sales-report button.back-btn:active {
+  transform: scale(.96);
+}
+
+
+
+/* ================= CARD HEADER ================= */
+.sales-report .card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sales-report .card-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.sales-report .card-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+/* ================= TABLE ================= */
+#salesReportWrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 12px;
+}
+
+#salesReportWrapper th,
+#salesReportWrapper td {
+  padding: 6px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+#salesReportWrapper th {
+  background: color-mix(in srgb, var(--card) 92%, var(--border));
+  color: var(--muted);
+}
+
+#salesReportWrapper tbody tr:hover {
+  background: rgba(59,130,246,0.08);
+}
+
+#salesReportWrapper tbody tr.highlight {
+  background: rgba(59,130,246,0.25) !important;
+  font-weight: 600;
+}
+
+
+.cell-num {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cell-num.negative {
+  color: #dc2626; /* merah */
+}
+
+.cell-unit {
+  font-size: 10px;
+  color: #777;
+}
+
+.cell-dash {
+  color: #aaa;
+  font-style: italic;
+}
+
+/* ================= CELL FORMAT ================= */
+#salesReportWrapper td {
+  color: var(--text);
+  border-color: var(--border);
+}
+.cell-num {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cell-unit {
+  font-size: 10px;
+  color: #777;
+  line-height: 1;
+}
+
+.cell-dash {
+  color: #aaa;
+  font-style: italic;
+}
+
+
+/* ================= FORM ================= */
+#salesForm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+#salesForm label {
+  color: var(--muted);
+}
+#salesForm input,
+.modal-content input,
+.employee-form input,
+.employee-form select,
+.employee-form textarea {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+
+#salesForm input {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.dashboard-dark input::placeholder {
+  color: #94a3b8;
+}
+
+#salesForm button {
+  grid-column: 1 / -1;
+  padding: 8px 12px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#salesForm button:hover {
+  background: #2563eb;
+}
+
+
+.dashboard-dark .modal-header {
+  background: linear-gradient(135deg, #1e293b, #020617);
+}
+
+.dashboard-dark .report-icon {
+  background: rgba(255,255,255,.08);
+}
+
+.dashboard-dark .report-text p {
+  color: var(--muted);
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+  #salesForm {
+    grid-template-columns: 1fr;
+  }
+
+  #salesReportWrapper table,
+  #salesReportWrapper th,
+  #salesReportWrapper td {
+    font-size: 11px;
+  }
+}
+
+/* ================= ANIMATION ================= */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* =========================
+   MODAL OVERLAY (SALES)
+========================= */
+.modal-overlayy {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55); /* soft dark */
+  backdrop-filter: blur(6px);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 3000;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition: opacity .25s ease, visibility .25s ease;
+}
+
+.modal-overlayy.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* =========================
+   MODAL BOX
+========================= */
+.modal-box {
+  background: #ffffff;
+  width: 100%;
+ max-width:550px;
+  max-height:500vh;
+
+  border-radius: 16px;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.35),
+    0 0 0 1px rgba(0,0,0,.04);
+
+  overflow: hidden;
+
+  transform: translateY(30px) scale(.95);
+  transition: transform .3s ease;
+}
+
+.modal-overlayy.active .modal-box {
+  transform: translateY(0) scale(1);
+}
+
+/* =========================
+   HEADER
+========================= */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: #fff;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* close button */
+.close-btn {
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255,255,255,.3);
+}
+
+/* =========================
+   CONTENT
+========================= */
+.modal-content {
+  padding: 26px 28px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+
+/* input */
+.modal-content input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  background: #fff;
+  transition: border .2s ease, box-shadow .2s ease;
+}
+
+.modal-content input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+}
+
+/* =========================
+   SUBMIT BUTTON
+========================= */
+.modal-content button[type="submit"] {
+  grid-column: span 2;
+
+  margin-top: 10px;
+  padding: 12px;
+
+  border-radius: 12px;
+  border: none;
+
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: #fff;
+
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  cursor: pointer;
+
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.modal-content button[type="submit"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(37,99,235,.35);
+}
+
+.modal-content button[type="submit"]:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 15px rgba(37,99,235,.25);
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 550px) {
+  .modal-box {
+    width: calc(100% - 24px);
+  }
+
+  .modal-content {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content button[type="submit"] {
+    grid-column: span 1;
+  }
+}
+
+.modal-content input,
+.modal-content select,
+.modal-content textarea {
+  width: 100%;
+  box-sizing: border-box; /* 🔥 INI KUNCI */
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 6px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 400;
+  color: #444;
+  margin-bottom: 2px;
+}
+
+.form-group input,
+.form-group select {
+  padding: 8px 8px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.form-group input[readonly] {
+  background: #f5f6f7;
+  color: #555;
+}
+
+
+
+
+.week-card-wrapper {
+  display: flex;
+  gap: 18px;
+  padding: 16px 10px 22px;
+  margin-bottom: 22px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.week-card-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.week-card-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,.18);
+  border-radius: 10px;
+}
+
+
+.week-card {
+  position: relative;
+  flex: 0 0 auto;
+
+  min-width: 160px;
+  height: 96px;
+
+  padding: 18px 20px;
+  border-radius: 22px;
+
+  background: linear-gradient(
+    135deg,
+    var(--card-soft),
+    var(--card)
+  );
+
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    background .25s ease;
+}
+
+.week-card .week-label {
+  color: var(--muted);
+}
+
+.week-card .week-value {
+  color: var(--text);
+}
+
+.dashboard-dark .week-card {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.04),
+    0 10px 28px rgba(0,0,0,.6);
+}
+
+
+.week-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 18px 34px rgba(0,0,0,.16),
+    0 6px 12px rgba(0,0,0,.08);
+}
+
+.week-card.active {
+  background: linear-gradient(135deg, #34c759, #248a3d);
+  border-color: rgba(0,0,0,.08);
+
+  box-shadow:
+    0 22px 40px rgba(52,199,89,.45),
+    0 8px 16px rgba(0,0,0,.18);
+}
+
+.week-card.active .week-label {
+  color: rgba(255,255,255,.75);
+}
+
+.week-card.active .week-value {
+  color: #ffffff;
+}
+
+.week-card::after {
+  content: "";
+  position: absolute;
+  bottom: 8px;
+  left: 20px;
+  right: 20px;
+
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(0,0,0,.08);
+}
+
+.week-card.active::after {
+  background: rgba(255,255,255,.85);
+}
+
+
+
+
+tr.edited {
+  animation: flash 1.2s ease;
+}
+
+@keyframes flash {
+  0%   { background:#ffeaa7; }
+  100% { background:transparent; }
+}
+
+
+</style>
+</head>
+
+<body>
+
+  <div id="toastContainer"></div>
+
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="spinner"></div>
+  <div class="loading-text">Menyimpan data lembur...</div>
+</div>
+
+<header class="app-header">
+  <h2>Overtime Dashboard</h2>
+</header>
+
+
+<div id="configDrawer" class="drawer hidden">
+  <h3>Config Lembur</h3>
+
+  <label>Nama Karyawan</label>
+  <input id="cfgNama" disabled>
+
+  <label>Status</label>
+  <input id="cfgStatus" disabled>
+
+  <label id="cfgLabel">Gaji Pokok</label>
+  <input type="number" placeholder="Input Gaji Pokok" id="cfgNilai">
+
+  <button id="btnSaveConfig">Simpan</button>
+  <h3>Pengaturan Mingguan</h3>
+
+<label>Hari Awal Minggu</label>
+<select id="weekStartDay">
+  <option value="1">Senin</option>
+  <option value="0">Minggu</option>
+</select>
+
+<label>Aturan Week 1</label>
+<select id="weekFirstRule">
+  <option value="CONTAIN_JAN1">Minggu berisi 1 Januari</option>
+  <option value="FIRST_FULL_WEEK">Minggu penuh pertama</option>
+</select>
+
+<button id="btnSaveWeekRule">Simpan Week Rule</button>
+
+
+<h3>Kalender Mingguan Perusahaan</h3>
+
+<label>Tahun</label>
+<input type="number" id="weekYear" min="2000" max="2100">
+
+<label>Week 1 Mulai</label>
+<input type="date" id="week1Start">
+
+<label>Week 1 Selesai</label>
+<input type="date" id="week1End">
+
+<button id="btnSaveCompanyWeek">Simpan Kalender Mingguan</button>
+</div>
+
+
+<button
+  id="btnToggleEmployee"
+  class="hamburger-btn"
+  title="Input Data Overtime"
+  aria-label="Input Data Overtime"
+>
+  <svg
+    class="icon"
+    viewBox="0 0 24 24"
+    width="22"
+    height="22"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <!-- Clock -->
+    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+    <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Pencil -->
+    <path
+      d="M14.5 14.5l4-4 1 1-4 4-1.5.5.5-1.5z"
+      fill="currentColor"
+    />
+  </svg>
+</button>
+
+<div id="employeePanel" class="employee-drawer">
+
+  <div class="drawer-layout">
+
+    <!-- KOLOM KIRI -->
+    <aside class="employee-list">
+      <h2>Daftar Karyawan</h2>
+      <ul id="employeeList"></ul>
+    </aside>
+
+    <!-- KOLOM KANAN -->
+    <section class="employee-form">
+      <h2>
+        Input Lembur
+        <button id="btnConfig" class="icon-btn">⚙️</button>
+      </h2>
+
+      <label>NIK
+        <input id="karyawanNik" disabled>
+      </label>
+
+      <label>Nama
+        <input id="karyawanNama" disabled>
+      </label>
+
+      <label>Status
+        <input id="karyawanStatus" disabled>
+      </label>
+
+      <label>Tanggal
+        <input type="date" id="tanggalLembur">
+      </label>
+
+      <label>Jenis Hari
+        <select id="jenisHari">
+          <option value="HB">Hari Biasa</option>
+          <option value="HL">Hari Libur</option>
+        </select>
+      </label>
+
+      <label>Jumlah Jam
+        <input type="number" id="jumlahJam">
+      </label>
+
+      <label>Gapok
+        <input type="number" id="gapok" readonly>
+      </label>
+
+      <label>Keterangan
+        <textarea id="keterangan" required></textarea>
+      </label>
+
+      <div class="summary">
+        <div>MH <strong id="sumMH">-</strong></div>
+        <div>Total <strong id="sumTotal">-</strong></div>
+      </div>
+
+      <button id="btnSave">Simpan</button>
+    </section>
+
+  </div>
+</div>
+
+
+
+<!-- CARD REPORT -->
+<div id="weeklyReportCard" class="report-card">
+  <div class="report-icon">
+    <svg viewBox="0 0 24 24">
+      <path d="M3 3h18v18H3z" fill="none"/>
+      <path d="M7 7h10v2H7zm0 4h10v2H7zm0 4h6v2H7z"/>
+    </svg>
+  </div>
+
+  <div class="report-text">
+    <h3>Laporan Lembur Mingguan</h3>
+    <p>Klik untuk melihat detail rekap</p>
+  </div>
+</div>
+
+<!-- CARD SALES -->
+<div id="salesReportCard" class="report-card">
+  <div class="report-icon">
+    <svg viewBox="0 0 24 24">
+      <path d="M3 3h18v18H3z" fill="none"/>
+      <!-- Icon grafik naik -->
+      <path d="M7 14l4-4 3 3 4-5" stroke="currentColor" stroke-width="2" fill="none"/>
+      <circle cx="7" cy="14" r="1"/>
+      <circle cx="11" cy="10" r="1"/>
+      <circle cx="14" cy="13" r="1"/>
+      <circle cx="18" cy="8" r="1"/>
+    </svg>
+  </div>
+
+  <div class="report-text">
+    <h3>Sales Target Config</h3>
+    <p>Klik untuk melihat & mengatur target sales</p>
+  </div>
+</div>
+
+
+<!-- WEEKLY REPORT -->
+<div id="weeklyReportWrapper" class="weekly-report hidden">
+
+<button id="btnBackReport" class="back-btn">Kembali</button>
+
+
+
+  <!-- BADGE HARI -->
+  <div id="weeklyDays" class="weekly-days-vertical"></div>
+
+  <!-- SUMMARY -->
+  <div class="weekly-summary">
+
+    <!-- TOTAL -->
+    <div class="summary-box">
+      <h4>Total Lembur</h4>
+
+      <div class="summary-row">
+        <span>Total Jam</span>
+        <strong id="weekTotalJam">0</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Total Biaya</span>
+        <strong id="weekTotalBiaya">Rp 0</strong>
+      </div>
+
+        <div class="summary-row">
+        <span>Budget Bulan ini</span>
+        <strong id="monthBudget">Rp 0</strong>
+        </div>
+
+        <div class="summary-row">
+        <span>Budget Minggu ini</span>
+        <strong id="weekBudget">Rp 0</strong>
+      </div>
+    </div>
+
+    <!-- STAFF -->
+    <div class="summary-box">
+      <h4>Distribusi Karyawan</h4>
+
+      <div class="summary-row">
+        <span>Staff</span>
+        <strong id="totalStaffJam">0 jam</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Non-Staff</span>
+        <strong id="totalNonStaffJam">0 jam</strong>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- TABLE -->
+  <div class="weekly-overtime">
+
+    <div class="weekly-header">
+      <h3>Rekap Lembur Mingguan</h3>
+      <input type="week" id="weekFilter">
+    </div>
+
+    <table class="weekly-table">
+      <thead>
+        <tr>
+          <th>Hari</th>
+          <th>Nama</th>
+          <th>Jam</th>
+          <th>Keterangan</th>
+          <th>Biaya</th>
+          <th>Aksi</th>
+
+        </tr>
+      </thead>
+      <tbody id="weeklyBody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4">Total Minggu</td>
+          <td id="weeklyTotal">Rp 0</td>
+        </tr>
+      </tfoot>
+    </table>
+
+  </div>
+</div>
+
+
+
+<!-- SALES REPORT -->
+<div id="salesReportWrapper" class="sales-report hidden">
+
+  <button id="btnBackSales" class="back-btn">Kembali</button>
+    <!-- Card week filter -->
+  <div id="weekCardWrapper" class="week-card-wrapper"></div>
+
+  <!-- Konten sales (tabel / grafik / form) -->
+  <div class="sales-content">
+    <h3>Rekap Sales Target</h3>
+
+    <table id="salesTable">
+      <thead>
+        <tr>
+          <th>Bulan</th>
+          <th>Tahun</th>
+          <th>Week Now</th>
+          <th>Jumlah Week</th>
+          <th>Sales target Bulan</th>
+          <th>Sales target Minggu</th>
+          <th>Aktual GR</th>
+          <th>Budget Bulan</th>
+          <th>Budget Week</th>
+           <th>Kenaikan</th>
+          <th>Final Budget</th>
+          <th>Rasio</th>
+          <th>Naik / Turun</th>
+          <th>Aktual Overtime</th>
+          <th>Budget by CI </th>
+          <th>Selisih FA</th>
+          <th>Selisih CI</th>
+          <th>Man Hour</th>
+          <th>Bobot</th>
+          <th>Rasio Aktual Weekly</th>
+          <th>Rasio Aktual Monthly</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+<button id="btnOpenSalesModal" class="config-btn">
+  ➕ Config
+</button>
+
+<!-- SALES MODAL -->
+<div id="salesModal" class="modal-overlayy modal-sales">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Config Sales Target</h3>
+      <button id="btnCloseSalesModal" class="close-btn">&times;</button>
+    </div>
+
+   <form id="salesForm" class="modal-content">
+
+  <div class="form-group">
+    <label for="weekByMonth">Jumlah Minggu dalam Bulan</label>
+    <input id="weekByMonth" type="number" min="1" max="6" required>
+  </div>
+    <div class="form-group">
+    <label for="week_now">Minggu Sekarang</label>
+    <input id="week_now" type="number" min="1" max="52" required>
+  </div>
+
+  <div class="form-group">
+    <label for="bulan">Bulan</label>
+    <select id="bulan" required>
+      <option value="">Pilih Bulan</option>
+      <option value="januari">Januari</option>
+      <option value="februari">Februari</option>
+      <option value="maret">Maret</option>
+      <option value="april">April</option>
+      <option value="mei">Mei</option>
+      <option value="juni">Juni</option>
+      <option value="juli">Juli</option>
+      <option value="agustus">Agustus</option>
+      <option value="september">September</option>
+      <option value="oktober">Oktober</option>
+      <option value="november">November</option>
+      <option value="desember">Desember</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="tahun">Tahun</label>
+    <input id="tahun" type="number" required>
+  </div>
+
+  <div class="form-group">
+    <label for="sales_target">Sales Target Bulanan</label>
+    <input id="sales_target" type="number" required>
+  </div>
+
+  <div class="form-group">
+    <label for="sales_target_week">Sales Target Mingguan</label>
+    <input id="sales_target_week" readonly>
+  </div>
+
+  <div class="form-group">
+    <label for="aktual_gr">Aktual GR</label>
+    <input id="aktual_gr" type="number">
+  </div>
+
+  <div class="form-group">
+    <label for="budget_bulan">Budget Bulanan</label>
+    <input id="budget_bulan" type="number" required>
+  </div>
+
+  <div class="form-group">
+    <label for="budget_week">Budget Mingguan</label>
+    <input id="budget_week" readonly>
+  </div>
+
+  <div class="form-group">
+    <label for="final_budget">Final Budget</label>
+    <input id="final_budget" readonly>
+  </div>
+
+  <div class="form-group">
+    <label for="nominal">Kenaikan / Penurunan Budget</label>
+    <input id="nominal" readonly>
+  </div>
+
+  <div class="form-group">
+    <label for="rasio">rasio</label>
+    <input id="rasio" readonly>
+  </div>
+
+  <div class="form-group">
+    <label for="realisasi_overtime">Aktual Overtime</label>
+    <input id="realisasi_overtime" type="number" required>
+  </div>
+
+  <div class="form-group">
+    <label for="budget_by_ci">Budget by CI</label>
+    <input id="budget_by_ci" type="number" required>
+  </div>
+
+  <div class="form-group">
+    <label for="selisih_budget_fa">Selisih Budget FA</label>
+    <input id="selisih_budget_fa" readonly>
+  </div>
+
+  <div class="form-group">
+    <label for="selisih_budget_ci">Selisih Budget CI</label>
+    <input id="selisih_budget_ci" readonly>
+  </div>
+
+  <div class="form-group">
+    <label for="man_hour">Man Hour</label>
+    <input id="man_hour" type="number" step="0.1" required>
+  </div>
+
+  <div class="form-group">
+    <label for="bobot">Bobot</label>
+    <input id="bobot" type="number" step="0.1" required>
+  </div>
+
+  <div class="form-group">
+    <label for="persentase">Persentase kenaikan / penurunan</label>
+    <input id="persentase" readonly>
+  </div>
+
+
+
+  <div class="form-group">
+    <label for="rasio_weekly">Rasio Weekly</label>
+    <input id="rasio_weekly" readonly>
+  </div>
+   <div class="form-group">
+    <label for="rasio_average">Rasio Aktual Monthly</label>
+    <input id="rasio_average" readonly>
+  </div>
+
+  <button type="submit" id="btnSaveSales">Simpan</button>
+</form>
+
+    </form>
+  </div>
+</div>
+
+</div>
+
+
+
+
+  <!-- ================= MODAL KONFIRMASI ================= -->
+<!-- MODAL KONFIRMASI -->
+<div id="modalOverlay" class="modal-overlay modal-confirm hidden">
+  <div class="modal">
+    <h3 id="modalTitle">Konfirmasi</h3>
+    <p id="modalMessage"></p>
+
+    <div class="modal-actions">
+      <button id="modalCancel" class="btn-secondary">Batal</button>
+      <button id="modalOk" class="btn-danger">Ya</button>
+    </div>
+  </div>
+</div>
+<script src="overtime_renderer.js"></script>
+</body>
+</html>

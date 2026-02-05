@@ -1,0 +1,21 @@
+# Node
+node_modules/
+
+# Electron build
+dist/
+out/
+win-unpacked/
+*.exe
+*.msi
+*.asar
+
+# Logs & DB
+logs/
+database/
+*.log
+
+firebase-service-account.json
+firebase-service-account*.json
+
+# Env
+.env

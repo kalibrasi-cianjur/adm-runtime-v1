@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
+  <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"/>
+
+  <title>Inventory Loader</title>
+
+  <style>
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --table-bg: #ffffff;
+  --table-text: #000000;
+}
+
+body {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+    .container {
+      max-width: auto;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    h1 { margin: 0 0 12px 0; font-size: 20px; }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .left-buttons { display:flex; gap:10px; }
+    button.action-btn {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .toolbar button {
+  padding: 6px 10px;
+  font-size: 12px;
+  height: 32px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.toolbar button:hover {
+  opacity: 0.9;
+}
+    button.action-btn.cancel { background: #b5b5b5;
+    background: var(--bg-color);
+  color: var(--text-color); }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
+    th { background: #fafafa; font-weight: 700; }
+    td.actions { width: 140px; }
+
+/* ================== THEME COLOR FIX FOR TABLE HEADER ================== */
+
+table thead th {
+    color: var(--table-header-text, var(--text-color));
+    background: var(--table-header-bg, var(--card-bg));
+}
+
+/* Normal row text */
+table tbody td {
+    color: var(--table-text, var(--text-color));
+}
+
+    .exported-label {
+      display:inline-block;
+      padding:4px 8px;
+      background:#e6f5ea;
+      color:#1a7f3a;
+      border-radius:6px;
+      font-weight:700;
+    }
+
+    /* Modal */
+    .modal { display:none; position: fixed; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.45);
+      justify-content: center; align-items: center; z-index: 999;}
+    .modal.show { display:flex; }
+    .modal-box {
+      width: 85%;
+      max-width: 1000px;
+      background:white;
+      border-radius: 12px;
+      padding: 16px;
+      max-height: 80vh;
+      display:flex; flex-direction:column;
+    }
+    #modalTableContainer { overflow:auto; max-height:60vh; border:1px solid #eee; margin-top:10px; border-radius:8px; }
+    .modal-header { margin-top: 10px; display:flex; gap:10px; justify-content:flex-end; }
+
+    .pagination-container { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .pg-btn { padding:6px 10px; border-radius:6px; border:1px solid #ddd; background:#fafafa; cursor:pointer; font-weight:600; }
+    .pg-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+    /* small */
+    @media (max-width:720px) {
+      .modal-box { width: 96%; padding: 12px; }
+      .actions { display:flex; gap:6px; }
+    }
+
+     #paginationContainer button {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        background: #007bff;
+        color: white;
+        margin-left: 5px;
+        font-size: 14px;
+    }
+    #paginationContainer button:hover {
+        background: #0056b3;
+    }
+    #paginationContainer span {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  width: 90%;
+  max-width: 900px;
+  border-radius: 10px;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: black;
+}
+
+.modal-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.modal-content th, .modal-content td {
+  padding: 6px;
+  border: 1px solid #ddd;
+}
+
+.pagination {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.pagination button {
+  margin: 2px;
+  padding: 6px 10px;
+}
+
+.closeBtn {
+  margin-top: 15px;
+  padding: 8px 15px;
+}
+
+.highlight {
+    background: yellow;
+    font-weight: bold;
+    color: black;
+}
+
+
+
+.toast {
+  min-width: 240px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: white;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  opacity: 0;
+  transform: translateX(40px);
+  animation: slideIn 0.35s forwards;
+}
+
+.toast.success { background: #28a745; }
+.toast.error   { background: #dc3545; }
+.toast.info    { background: #0d6efd; }
+.toast.warn    { background: #ff9800; }
+
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0px);
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+
+/* ================= BADGE ONLINE / OFFLINE ================== */
+
+
+
+
+/* Offline */
+.status-badge.offline {
+  background: rgba(200, 0, 0, 0.15);
+  color: #b30000;
+  border: 1px solid rgba(200, 0, 0, 0.4);
+}
+
+.status-badge.offline::before {
+  background-color: #ff3333;
+}
+
+
+
+/* Theme Adapt */
+body.dashboard-tech .status-badge.online {
+  background: #00ff9d;
+  color: #002215;
+}
+body.dashboard-tech .status-badge.offline {
+  background: #ff4b4b;
+}
+
+body.dashboard-neon .status-badge.online {
+  background: #0f0;
+  color: #000;
+}
+body.dashboard-neon .status-badge.offline {
+  background: #f00;
+}
+
+
+.offline-notice {
+  position: fixed;
+  top: -60px;
+  left: 0;
+  width: 100%;
+  background: #ff4d4d;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  padding: 12px 0;
+  z-index: 9999;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  transition: top 0.35s ease;
+}
+
+.offline-notice.show {
+  top: 0;
+}
+
+.offline-notice.hidden {
+  top: -60px;
+}
+
+
+/* Wrapper bar di bagian atas layar */
+.sync-full {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;      /* panjang 1 window */
+  height: 6px;
+  background: rgba(0,0,0,0.05);
+  z-index: 9999;
+}
+
+.sync-full.hidden {
+  display: none;
+}
+
+/* Bar progress */
+.sync-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4caf50, #2ECC71, #1abc9c);
+  background-size: 200% 100%;
+  animation: gradientMove 2.5s linear infinite;
+  transition: width 0.25s ease;
+  border-radius: 0 6px 6px 0;
+}
+
+/* Animasi gerakan gradien */
+@keyframes gradientMove {
+  0% { background-position: 0%; }
+  100% { background-position: 200%; }
+}
+
+/* Teks persentase */
+.sync-label {
+  position: fixed;
+  top: 10px;
+  right: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  background: rgba(255,255,255,0.85);
+  padding: 4px 10px;
+  border-radius: 6px;
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+}
+
+.loading-screen {
+  position: fixed;
+  top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.5);
+  display:flex; justify-content:center; align-items:center;
+  z-index: 9999;
+}
+.loading-screen.hidden { display:none; }
+.loading-content {
+  width: 300px; background:#fff; padding:20px; border-radius:12px;
+  text-align:center;
+}
+.loading-bar {
+  width:0%; height:12px; background:#4caf50; border-radius:6px;
+  margin-bottom:10px; transition: width 0.2s;
+}
+.loading-text { font-weight:bold; }
+
+
+
+/* ================= MODAL OVERLAY ================= */
+#modalFormManual {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+}
+
+#modalFormManual.active {
+  display: flex;
+}
+
+/* ================= MODAL BOX ================= */
+.modal-box {
+  background: #ffffff;
+  width: 300;
+  max-width: 700px;
+  padding: 50px;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+
+/* ================= FORM VERTICAL ================= */
+#modalFormManual table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#modalFormManual tr,
+#modalFormManual td {
+  display: block;
+  border: none;
+}
+
+/* spacing antar field */
+#modalFormManual td {
+  margin-bottom: 16px;
+}
+
+/* label */
+#modalFormManual td::before {
+  content: attr(data-label);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+/* ================= INPUT ================= */
+#modalFormManual input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  color: #111;
+  text-transform: uppercase;
+
+  transition: all 0.2s ease;
+}
+
+/* focus effect */
+#modalFormManual input:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* placeholder */
+#modalFormManual input::placeholder {
+  color: #999;
+  font-size: 13px;
+}
+
+/* ================= BUTTON ================= */
+#simpanManual {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+#simpanManual:hover {
+  background: #1e4fd6;
+}
+
+#simpanManual:active {
+  transform: scale(0.97);
+}
+
+
+body.dashboard-tech #modalFormManual {
+  background: rgba(248, 250, 252, 0.85);
+    color: #0f172a; /* slate-900 */
+}
+
+body.dashboard-tech #modalFormManual * {
+  color: inherit;
+}
+
+/* label */
+body.dashboard-tech #modalFormManual td::before {
+  color: #334155; /* slate-700 */
+}
+
+/* input */
+body.dashboard-tech #modalFormManual input {
+  background: #ffffff;
+  border: 1px solid #cbd5e1; /* slate-300 */
+}
+
+/* focus */
+body.dashboard-tech #modalFormManual input:focus {
+  border-color: #2563eb; /* blue-600 */
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+/* button */
+body.dashboard-tech #modalFormManual button {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+}
+
+body.dashboard-tech #modalFormManual button:hover {
+  background: #1d4ed8;
+}
+
+/* autocomplete */
+body.dashboard-tech #modalFormManual .suggestion-box {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+}
+
+body.dashboard-tech #modalFormManual .suggestion-item:hover {
+  background: #e2e8f0;
+}
+
+body.dashboard-neon #modalFormManual {
+  background: rgba(248, 250, 252, 0.85);
+  color: #e5e7eb; /* gray-200 */
+}
+
+body.dashboard-neon #modalFormManual * {
+  color: inherit;
+}
+
+/* label */
+body.dashboard-neon #modalFormManual td::before {
+  color: #9ca3af; /* gray-400 */
+}
+
+/* input */
+body.dashboard-neon #modalFormManual input {
+  background: #020617;
+  border: 1px solid #38bdf8; /* cyan-400 */
+  color: #e5e7eb;
+}
+
+/* focus */
+body.dashboard-neon #modalFormManual input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35);
+}
+
+/* placeholder */
+body.dashboard-neon #modalFormManual input::placeholder {
+  color: rgba(229, 231, 235, 0.45);
+}
+
+/* button */
+body.dashboard-neon #modalFormManual button {
+  background: transparent;
+  border: 1px solid #a855f7; /* purple-500 */
+  color: #a855f7;
+}
+
+body.dashboard-neon #modalFormManual button:hover {
+  background: rgba(168, 85, 247, 0.18);
+}
+
+/* autocomplete */
+body.dashboard-neon #modalFormManual .suggestion-box {
+  background: #020617;
+  border: 1px solid #38bdf8;
+}
+
+body.dashboard-neon #modalFormManual .suggestion-item:hover {
+  background: rgba(56, 189, 248, 0.18);
+}
+
+
+body.dashboard-dark #modalFormManual .modal-box {
+  background: rgba(17, 24, 39, 0.85); /* slate-900 glass */
+  color: #e5e7eb;                     /* gray-200 */
+  backdrop-filter: blur(14px);
+}
+
+body.dashboard-dark #modalFormManual * {
+  color: inherit;
+}
+body.dashboard-dark #modalFormManual td::before {
+  color: #9ca3af; /* gray-400 */
+}
+
+body.dashboard-dark #modalFormManual input {
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid #374151; /* gray-700 */
+  color: #e5e7eb;
+}
+
+/* focus */
+body.dashboard-dark #modalFormManual input:focus {
+  border-color: #60a5fa; /* blue-400 */
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.35);
+}
+
+/* placeholder */
+body.dashboard-dark #modalFormManual input::placeholder {
+  color: rgba(229, 231, 235, 0.45);
+}
+
+body.dashboard-dark #modalFormManual button {
+  background: #2563eb; /* blue-600 */
+  border: none;
+  color: #ffffff;
+}
+
+body.dashboard-dark #modalFormManual button:hover {
+  background: #1d4ed8;
+}
+
+body.dashboard-dark #modalFormManual .suggestion-box {
+  background: rgba(2, 6, 23, 0.95);
+  border: 1px solid #374151;
+}
+
+body.dashboard-dark #modalFormManual .suggestion-item:hover {
+  background: rgba(96, 165, 250, 0.18);
+}
+
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-overlay.active {
+  display: flex;
+}
+
+.loading-box {
+  background: #fff;
+  padding: 24px 32px;
+  border-radius: 12px;
+  text-align: center;
+  min-width: 220px;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid #ddd;
+  border-top: 4px solid #333;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.edit-btn {
+  background:#1677ff;
+  color:#fff;
+  margin-right:6px;
+}
+
+.delete-btn {
+  background:#ff4d4f;
+  color:#fff;
+}
+
+.autocomplete-wrapper {
+  position: relative;
+}
+
+.suggestion-box {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  z-index: 9999;
+  display: none;
+}
+
+.suggestion-item {
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background: #f0f0f0;
+}
+
+
+
+
+/* ================= CONFIRM OVERLAY ================= */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.confirm-overlay.active {
+  display: flex;
+}
+
+/* ================= CONFIRM BOX ================= */
+.confirm-box {
+  width: 340px;
+  max-width: 90%;
+  padding: 20px;
+  border-radius: 14px;
+
+  background: var(--modal-bg, #1f2933);
+  color: var(--modal-text, #e5e7eb);
+
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  animation: pop 0.18s ease;
+}
+
+.confirm-box h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.confirm-box p {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* ================= ACTION BUTTON ================= */
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.confirm-actions button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.confirm-actions button.danger {
+  background: #dc2626;
+  color: #fff;
+}
+
+.confirm-actions button:not(.danger) {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.confirm-actions button:hover {
+  opacity: 0.9;
+}
+
+/* ================= ANIMATION ================= */
+@keyframes pop {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ================= LOG MODAL ROOT ================= */
+.log-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  z-index: 99999;
+}
+
+/* aktif */
+.log-modal.active {
+  display: flex;
+}
+
+/* ================= BOX ================= */
+.log-modal-box {
+  width: 900px;
+  max-height: 85vh;
+  background: var(--card-bg, #1e1e2e);
+  color: var(--text, #e5e7eb);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 25px 60px rgba(0,0,0,.6);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================= HEADER ================= */
+.log-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.log-modal-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.log-modal-header button {
+  border: none;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* ================= BODY ================= */
+.log-modal-body {
+  overflow: auto;
+}
+
+/* ================= TABLE ================= */
+.log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.log-table th,
+.log-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  text-align: left;
+}
+
+.log-table thead {
+  position: sticky;
+  top: 0;
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(4px);
+}
+
+/* ================= ACTION COLOR ================= */
+.log-save   { color: #60a5fa; }
+.log-delete { color: #f87171; }
+.log-update { color: #fbbf24; }
+
+/* ================= LOG FILTER ================= */
+.log-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.log-filter-bar input[type="date"] {
+  padding: 6px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border, #444);
+  background: transparent;
+  color: white;
+}
+
+.log-filter-bar button {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: #334155;
+  color: #e5e7eb;
+}
+
+/* ================= PAGINATION ================= */
+.log-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.log-pagination button {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+}
+
+.log-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ai-summary-box {
+  background: rgba(0,0,0,0.04);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  margin-top: 12px;
+  color:white;
+}
+
+
+
+.top-right-tools {
+  position: absolute;
+  top: auto;           /* naik 20px */
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
+
+/* input search dirapikan */
+#searchInput {
+  padding: 8px 32px 8px 12px;
+  width: 220px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  transition: all 0.25s ease;
+}
+
+
+
+/* ===== EXPORT PRINT MODAL ===== */
+
+.ep-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.ep-hidden {
+  display: none;
+}
+
+.ep-box {
+  background: #fff;
+  width: 260px;
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 15px 40px rgba(0,0,0,.25);
+  font-size: 13px;
+}
+
+.ep-box h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.ep-radio {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.ep-box input[type="number"] {
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px;
+  font-size: 13px;
+}
+
+.ep-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.ep-actions button {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.ep-actions .primary {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+}
+
+
+/* ===========================
+   EXPORT / PRINT MODE
+=========================== */
+
+#exportContainer {
+  display: none;
+}
+
+body.printing {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #fff !important;
+  color: #000 !important;
+
+  /* PAKSA WARNA HITAM */
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+body.printing #exportContainer {
+  display: block !important;
+  padding: 8mm 10mm;   /* ⬅️ KECIL, PAS A4 */
+}
+
+/* MATIKAN TOTAL UI */
+body.printing > *:not(#exportContainer) {
+  display: none !important;
+}
+
+/* ===========================
+   HEADER
+=========================== */
+
+.export-header {
+  text-align: center !important;
+  margin-bottom: 6px;
+  color: #000 !important;
+}
+
+.export-header h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #000 !important;
+}
+
+.export-meta {
+  font-size: 9px;
+  margin-top: 2px;
+  color: #000 !important;
+}
+
+/* ===========================
+   EXPORT TABLE (SUPER COMPACT)
+=========================== */
+
+.export-header {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.export-header h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #000;
+}
+
+.export-meta {
+  font-size: 9px;
+  color: #000;
+  margin-top: 4px;
+}
+
+
+
+/* TABLE */
+.export-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5px;
+  color: #000;
+}
+
+.export-table th,
+.export-table td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+  line-height: 1.15;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.export-table th {
+  font-weight: 700;
+}
+
+/* CATATAN */
+.export-note {
+  margin-top: 6px;
+  font-size: 8px;
+  color: #000;
+  line-height: 1.3;
+}
+
+.export-page {
+  position: relative;         /* agar watermark absolute relatif ke page */
+  page-break-after: always;
+}
+
+.export-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 48px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.08);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 0;
+}
+
+
+/* PRINT */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  body.printing > *:not(#exportContainer) {
+    display: none !important;
+  }
+
+  #exportContainer {
+    display: block !important;
+  }
+
+
+/* ===========================
+   FORCE PURE BLACK (ELECTRON)
+=========================== */
+
+.export-header,
+.export-header *,
+.export-meta,
+.export-meta *,
+.export-table,
+.export-table *,
+.export-note {
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important; /* 🔥 KUNCI UTAMA */
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Pastikan print engine patuh */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+@media print {
+  body.printing > *:not(#exportContainer) {
+    display: none !important;
+  }
+
+  #exportContainer {
+    display: block !important;
+  }
+
+  .export-page {
+    page-break-after: always;
+  }
+}
+
+
+  </style>
+</head>
+<body>
+
+
+<div id="offlineNotice" class="offline-notice hidden">
+  ⚠️ Anda sedang offline — Sinkronisasi dengan cloud terputus.
+</div>
+
+<div id="statusBadge" class="status-badge offline">Offline</div>
+
+<!-- ================= LOG MODAL ================= -->
+<div id="log-modal" class="log-modal">
+  <div class="log-modal-box">
+
+    <div class="log-modal-header">
+      <h3>Inventory Logs</h3>
+      <button id="log-modal-close" aria-label="Close">✕</button>
+    </div>
+
+    <div class="log-modal-body">
+
+      <!-- ===== LOG FILTER BAR ===== -->
+      <div class="log-filter-bar">
+        <input type="date" id="logDateFrom">
+        <span>–</span>
+        <input type="date" id="logDateTo">
+
+        <button id="btnFilterLog">Filter</button>
+        <button id="btnResetLog">Reset</button>
+      </div>
+
+      <!-- ===== LOG TABLE ===== -->
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th>Waktu</th>
+            <th>Aksi</th>
+            <th>Kode</th>
+            <th>Detail</th>
+            <th>Sumber</th>
+          </tr>
+        </thead>
+        <tbody id="logTableBody">
+          <tr>
+            <td colspan="5" style="text-align:center; opacity:.6">
+              Belum ada data
+            </td>
+          </tr>
+        </tbody>
+      </table>
+       <pre id="aiSummaryBox" class="ai-summary-box">
+Klik "Summary" untuk analisa log
+</pre>
+      <!-- ===== LOG PAGINATION (PINDAH KE SINI) ===== -->
+      <div class="log-pagination">
+        <button id="logPrev">‹ Prev</button>
+        <span id="logPageInfo">Page 1</span>
+        <button id="logNext">Next ›</button>
+
+
+
+      </div>
+       <button id="btnExportLogPdf">📄 Export PDF</button>
+        <button id="btnPrintLog">🖨 Print</button>
+        <button id="btnAISummary">🤖 Summary</button>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+<div id="confirmModal" class="confirm-overlay">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">Konfirmasi</h3>
+    <p id="confirmMessage">Apakah Anda yakin?</p>
+
+    <div class="confirm-actions">
+      <button id="confirmCancel">Batal</button>
+      <button id="confirmOk" class="danger">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalFormManual">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Input Manual Barang</h2>
+    </div>
+    <table>
+      <tbody>
+        <tr>
+          <td data-label="Kode Barang">
+            <input type="text" id="kode_barang" placeholder="Kode barang" required>
+          </td>
+        </tr>
+        <tr>
+          <td data-label="Nama Material">
+          <div class="autocomplete-wrapper">
+          <input
+          type="text"
+          id="nama_material"
+          placeholder="Nama material"
+          required
+          autocomplete="off"
+          >
+          <div id="namaSuggestion" class="suggestion-box"></div>
+          </div>
+          </td>
+        </tr>
+        <tr>
+          <td data-label="Satuan">
+            <input type="text" id="satuan" placeholder="Satuan" required>
+          </td>
+        </tr>
+        <tr>
+          <td data-label="Lokasi">
+            <input type="text" id="lokasi" placeholder="Lokasi Penyimpanan" required>
+          </td>
+        </tr>
+        <tr>
+          <td data-label="SAP / Jumlah">
+            <input type="text" id="sap_lokasi" placeholder="Jumlah" required>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:12px; text-align:right;">
+      <button id="simpanManual" type="button">Simpan</button>
+    </div>
+  </div>
+</div>
+
+
+  <div class="top-right-tools">
+  <div style="position: relative;">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="🔍 Cari data..."
+    />
+    <span id="searchLoading"></span>
+  </div>
+
+  <button
+    id="btnOpenLog"
+    class="log-btn icon-only"
+    title="Log Aktivitas"
+  >
+    🕘
+  </button>
+</div>
+
+
+<div id="excelModal" class="modal">
+  <div class="modal-content">
+    <h2>Preview File Excel</h2>
+    <div id="excelPreview"></div>
+
+    <div class="modal-buttons">
+      <button id="exportAllBtn" class="btn-primary">Export Semua</button>
+      <button id="closeModalBtn" class="btn-secondary">Tutup</button>
+    </div>
+  </div>
+</div>
+  <!-- Modal Duplikat Database -->
+<div id="dbDuplicateModal" class="modal">
+  <div class="modal-content">
+    <h2>Duplikat di Database</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Kode</th>
+          <th>Nama Material</th>
+          <th>Satuan</th>
+          <th>Lokasi</th>
+          <th>Qty</th>
+        </tr>
+      </thead>
+      <tbody id="dbDupBody"></tbody>
+    </table>
+    <div id="dbDupPagination" class="pagination"></div>
+    <button class="closeBtn" id="closeDbDup">Close</button>
+  </div>
+</div>
+
+
+<!-- Modal Duplikat Excel -->
+<div id="excelDuplicateModal" class="modal">
+  <div class="modal-content">
+    <h2>Duplikat di Excel</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Kode</th>
+          <th>Nama Material</th>
+          <th>Satuan</th>
+          <th>Lokasi</th>
+          <th>Qty</th>
+        </tr>
+      </thead>
+      <tbody id="excelDupBody"></tbody>
+    </table>
+    <div id="excelDupPagination" class="pagination"></div>
+    <button class="closeBtn" id="closeExcelDup">Close</button>
+  </div>
+</div>
+
+<div id="syncArea" class="sync-full hidden">
+  <div id="syncBar" class="sync-bar"></div>
+  <div class="sync-label">
+    Sinkronisasi <span id="syncText">0%</span>
+  </div>
+</div>
+  <div class="container">
+    <h1>Inventory Loader</h1>
+
+
+    <div class="toolbar">
+      <div class="left-buttons">
+        <button id="openFile" class="action-btn">📂 Excel</button>
+        <button id="saveFile" class="action-btn">💾 DB</button>
+        <button id="checkDiffBtn">🔍 Diff</button>
+        <button id="inputManualBtn">✍ Manual</button>
+        <button id="exportPdfBtn">📄 PDF</button>
+        <button id="printBtn">🖨 Print</button>
+      </div>
+
+      </div>
+
+
+    </div>
+
+
+ <div id="pagination" class="pagination-container"></div>
+     <div id="paginationContainer" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <div>
+        <span id="pageInfo">Page 1</span>
+         <button id="prevPage" class="btn btn-secondary">Prev</button>
+        <button id="nextPage" class="btn btn-secondary">Next</button>
+    </div>
+    <div>
+
+
+    </div>
+</div>
+
+  </div>
+</div>
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Kode</th>
+          <th>Nama Material</th>
+          <th>Satuan</th>
+          <th>Lokasi</th>
+          <th>SAP</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+
+  <!-- Modal perbandingan -->
+  <div id="compareModal" class="modal" aria-hidden="true">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0;">Perbedaan Data</h2>
+        <button id="closeModalBtn" class="action-btn cancel">Tutup</button>
+      </div>
+
+      <div id="modalTableContainer">
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th>Jenis</th>
+              <th>Kode</th>
+              <th>Nama</th>
+              <th>Lokasi</th>
+              <th>Qty Lama</th>
+              <th>Qty Baru</th>
+            </tr>
+          </thead>
+          <tbody id="modalTableBody"></tbody>
+        </table>
+      </div>
+
+
+      <div id="modalPagination" class="pagination-container"></div>
+
+      <div class="modal-header">
+        <button id="exportModalAllBtn" class="action-btn export">Export Semua</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Screen -->
+<div id="loadingScreen" class="loading-screen hidden">
+  <div class="loading-content">
+    <div id="loadingBar" class="loading-bar"></div>
+    <div id="loadingText" class="loading-text">0%</div>
+  </div>
+</div>
+
+<div id="pdfLoadingScreen" class="loading-screen hidden">
+  <div class="loading-content">
+    <p>Menyimpan PDF, mohon tunggu...</p>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+
+  <div id="loadingSimpan" class="loading-overlay">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <p>Menyimpan data...</p>
+  </div>
+</div>
+
+<div id="exportContainer">
+  <div id="exportContent"></div>
+</div>
+
+
+<!-- EXPORT / PRINT PAGE CHOOSER -->
+<div id="exportPrintModal" class="ep-modal ep-hidden">
+  <div class="ep-box">
+    <h3>Pilih Data</h3>
+
+    <label class="ep-radio">
+      <input type="radio" name="epMode" value="all" checked />
+      Semua Page
+    </label>
+
+    <label class="ep-radio">
+      <input type="radio" name="epMode" value="single" />
+      Page tertentu
+    </label>
+
+   <input
+  type="text"
+  id="epPageNumber"
+  placeholder="Kosong = semua | 3 | 1-4"
+  disable
+/>
+
+
+    <div class="ep-actions">
+      <button id="epCancel">Batal</button>
+      <button id="epConfirm" class="primary">Lanjut</button>
+    </div>
+  </div>
+</div>
+
+
+
+<div id="toastContainer" class="toast-container"></div>
+  <script src="inventory_renderer.js"></script>
+  <script src="../js/toast.js"></script>
+</body>
+</html>

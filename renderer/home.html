@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Sparepart</title>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0f172a; /* dark navy elegant */
+    margin: 0;
+    padding: 40px 20px;
+    color: #e2e8f0;
+  }
+
+  h2 {
+    text-align: center;
+    color: #f1f5f9;
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 40px;
+  }
+
+  .card-container {
+    max-width: 1000px;
+    margin: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 28px;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 20px;
+    padding: 32px 25px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: 0.35s ease;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+  }
+
+  .card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  /* Glow Accent */
+  .card::before {
+    content: "";
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 140px;
+    height: 140px;
+    background: #3b82f6;
+    opacity: 0.18;
+    filter: blur(70px);
+    transition: 0.5s ease;
+  }
+
+  .card:hover::before {
+    opacity: 0.32;
+    transform: scale(1.3);
+  }
+
+  .card-icon {
+    font-size: 52px;
+    margin-bottom: 20px;
+    color: #60a5fa;
+    display: flex;
+    justify-content: center;
+  }
+
+  .card-title {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #f8fafc;
+  }
+
+  .card-desc {
+    text-align: center;
+    font-size: 14px;
+    opacity: 0.7;
+    color: #cbd5e1;
+  }
+
+</style>
+</head>
+<body>
+
+<h2>Dashboard Sistem Sparepart</h2>
+
+<div class="card-container">
+
+  <!-- CARD 1 -->
+ <div class="card" onclick="goToLoginForRequest()">
+    <div class="card-icon">🧾</div>
+    <div class="card-title">Request Sparepart</div>
+    <div class="card-desc">Form pengajuan kebutuhan sparepart.</div>
+  </div>
+
+  <!-- CARD 2 -->
+  <div class="card" onclick="location.href='https://form-1707.web.app/loginUser.html'">
+    <div class="card-icon">⚙️</div>
+    <div class="card-title">Pemakaian Sparepart</div>
+    <div class="card-desc">Catat penggunaan sparepart pada mesin.</div>
+  </div>
+
+  <!-- CARD 3 -->
+  <div class="card" onclick="location.href='history_permintaan.html'">
+    <div class="card-icon">📂</div>
+    <div class="card-title">History Permintaan</div>
+    <div class="card-desc">Riwayat lengkap permintaan sparepart.</div>
+  </div>
+
+  <!-- CARD 4 -->
+  <div class="card" onclick="location.href='manual_book.html'">
+    <div class="card-icon">📘</div>
+    <div class="card-title">Manual Book</div>
+    <div class="card-desc">Dokumentasi dan panduan teknis.</div>
+  </div>
+
+</div>
+<script>
+function goToLoginForRequest() {
+  localStorage.setItem("redirectAfterLogin", "request_sparepart.html");
+  location.href = "loginUser.html";
+}
+</script>
+
+
+</body>
+</html>

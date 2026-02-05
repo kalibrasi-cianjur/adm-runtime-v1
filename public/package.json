@@ -1,0 +1,22 @@
+{
+  "name": "supabase-camera-pwa",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.0"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0",
+    "vite-plugin-basic-ssl": "^1.0.4"
+  }
+}

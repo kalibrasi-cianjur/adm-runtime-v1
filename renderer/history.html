@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>History Penggantian Part</title>
+
+<!-- ========================= CSP FIX ========================= -->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               img-src 'self' data: blob: https://hlleyvltrlopiagyrvbr.supabase.co;
+               script-src 'self';
+               style-src 'self' 'unsafe-inline';">
+<link rel="stylesheet" href="style.css" />
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #0d1117;
+    color: #d0d6e1;
+    margin: 0;
+    padding: 20px;
+  }
+
+  h2 { margin-top: 0; }
+
+  .filter-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+
+  input, select {
+    padding: 7px;
+    border-radius: 6px;
+    border: 1px solid #333;
+    background: #161b22;
+    color: white;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: #161b22;
+  }
+
+  th, td {
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    font-size: 14px;
+  }
+
+  th {
+    background: #1f2630;
+  }
+
+  tr:hover {
+    background: rgba(255,255,255,0.05);
+  }
+
+  .pagination {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+  }
+
+  button {
+    background: #238636;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+  }
+
+  button.ghost {
+    background: #444;
+  }
+
+  img {
+    width: 60px;
+    border-radius: 4px;
+  }
+
+  mark {
+  background: yellow;
+  padding: 2px;
+}
+
+/* FOTO KECIL DI TABEL */
+.photo {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  cursor: zoom-in;
+  border-radius: 4px;
+}
+
+/* BACKDROP MODAL BESAR */
+.viewer {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.viewer.hidden { display: none !important; }
+
+.viewer-content {
+  text-align: center;
+  max-width: 90%;
+}
+
+.viewer-img {
+  max-width: 90vw;
+  max-height: 70vh;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(255,255,255,0.3);
+}
+
+.viewer-desc {
+  margin-top: 15px;
+  background: rgba(255,255,255,0.15);
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: white;
+  backdrop-filter: blur(5px);
+  text-align: left;
+}
+
+.viewer-desc strong {
+  color: #ffeb3b;
+}
+
+
+#photoViewer {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+#photoViewer.hidden {
+  display: none;
+}
+
+#viewerImg {
+  width: auto !important;
+  height: auto !important;
+  max-width: 80vw !important;
+  max-height: 80vh !important;
+  display: block;
+}
+
+/* agar foto terasa lebih besar */
+#viewerImg:hover {
+  transform: scale(1.02);
+}
+
+#viewerDesc::before {
+  content: "";
+  display: block;
+  width: 40%;
+  height: 1px;
+  background: #666;
+  margin: 10px auto 14px;
+  opacity: 0.3;
+}
+
+#viewerDesc {
+  margin-top: 12px;
+  font-size: 12px;          /* perkecil ukuran */
+  color: #e0e0e0;           /* abu-abu lembut */
+  text-align: center;
+  line-height: 1.4;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  opacity: 0.85;            /* sedikit transparan agar soft */
+}
+
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  font-size: 35px;
+  color: white;
+  cursor: pointer;
+  z-index: 99999;
+}
+
+
+
+.net-banner {
+  background: #a50000;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.hidden {
+  display: none;
+}
+
+
+.thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.thumb:hover { opacity: 0.8; }
+
+img.thumb {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.filter-box {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+  background: #111827;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  margin-bottom: 20px;
+}
+
+.filter-box input[type="text"],
+.filter-box select,
+.filter-box input[type="date"] {
+  padding: 8px 12px;
+  background: #1f2937;
+  border: 1px solid #374151;
+  color: #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: .2s;
+}
+
+.filter-box input:focus,
+.filter-box select:focus {
+  border-color: #4f9cff;
+  box-shadow: 0 0 0 2px rgba(79,156,255,.3);
+}
+
+.date-filter-group {
+  display: flex;
+  gap: 12px;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.date-field label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+#btnApplyFilter {
+  padding: 9px 14px;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+#btnDelFilter {
+  padding: 9px 14px;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+#btnApplyFilter:hover {
+  background: #1d4ed8;
+}
+#btnDelFilter:hover {
+  background: #1d4ed8;
+}
+
+
+
+</style>
+</head>
+
+<body>
+
+<div id="netBanner" class="net-banner hidden">
+  ❗ Periksa jaringan Anda — Anda sedang mengakses dalam mode offline.
+  Sinkronisasi dengan cloud terhambat.
+</div>
+
+<div id="photoViewer" class="hidden">
+  <span id="closeViewer" class="close-btn">×</span>
+
+  <div id="viewerContent">
+    <img id="viewerImg">
+    <div id="viewerDesc"></div>
+  </div>
+</div>
+
+
+
+
+
+<h2>History Penggantian Part</h2>
+
+<!-- ========================= FILTER ========================= -->
+<div class="filter-box">
+
+  <input type="text" id="searchInput" placeholder="Cari mesin / part / area">
+
+  <div class="date-filter-group">
+
+    <div class="date-field">
+      <label for="dateStart">Dari</label>
+      <input type="date" id="dateStart">
+    </div>
+
+    <div class="date-field">
+      <label for="dateEnd">Sampai</label>
+      <input type="date" id="dateEnd">
+    </div>
+
+  </div>
+
+  <select id="filterArea">
+    <option value="">Semua Area</option>
+  </select>
+ <button id="btnDelFilter">Hapus Filter</button>
+  <button id="btnApplyFilter">Terapkan Filter</button>
+
+</div>
+
+
+<!-- ========================= TABLE ========================= -->
+<table>
+  <thead>
+    <tr>
+      <th>Mesin</th>
+      <th>Part</th>
+      <th>Area</th>
+      <th>PIC</th>
+      <th>Dept</th>
+      <th>Foto</th>
+      <th>Tanggal</th>
+    </tr>
+  </thead>
+  <tbody id="historyTable"></tbody>
+</table>
+
+<!-- ========================= PAGINATION ========================= -->
+<div class="pagination">
+  <button class="ghost" id="prevPage">Previous</button>
+  <span id="pageInfo"></span>
+  <button class="ghost" id="nextPage">Next</button>
+</div>
+
+<script src="renderer_history.js"></script>
+
+</body>
+</html>
