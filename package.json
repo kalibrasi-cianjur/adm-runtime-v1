@@ -44,7 +44,7 @@
       {
         "provider": "github",
         "owner": "kalibrasi-cianjur",
-        "repo": "adm-runtime"
+        "repo": "adm-runtime-v1"
       }
     ],
     "win": {
